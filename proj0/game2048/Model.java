@@ -4,8 +4,9 @@ import java.util.Formatter;
 import java.util.Observable;
 
 
+
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author TODO: Hannah Nguyen
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -106,14 +107,42 @@ public class Model extends Observable {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      * */
+
     public boolean tilt(Side side) {
+        board.setViewingPerspective(side);
         boolean changed;
         changed = false;
-
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
-        // changed local variable to true.
+        // changed local variable to true.xd
+        for (int c = 0; c < board.size(); c++) {
+            int spaceInCol = 0;
+            Tile merged = null;
+            for (int r = 3; r >= 0; r--) {
+                Tile t = board.tile(c,r);
+                if (t == null) {
+                    spaceInCol += 1;
+                }
+                if (t != null && r < 3) {
+                    for (int i = r + 1; i < board.size(); i++) {
+                        if (board.tile(c,i) != null && board.tile(c,i) != merged) {
+                            if (isValueSame(board, c, r, c, i)) {
+                                spaceInCol += 1;
+                            }
+                        }
+                    }
+                }
+                if (t != null && spaceInCol > 0) {
+                    if (board.move(c, r + spaceInCol, t)) {
+                        merged = board.tile(c, r + spaceInCol);
+                        score += t.value() * 2;
+                    }
+                    changed = true;
+                }
+            }
+        }
 
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
@@ -121,6 +150,9 @@ public class Model extends Observable {
         return changed;
     }
 
+    public boolean isValueSame(Board b, int col1, int row1, int col2, int row2) {
+        return b.tile(col1, row1).value() == b.tile(col2, row2).value();
+    }
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
      */
@@ -138,6 +170,12 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        int len = 3;
+        for (int i = 0; i <= len; i++) {
+            for (int j = 0; j <= len; j++) {
+                if (b.tile(i,j) == null) return true;
+            }
+        }
         return false;
     }
 
@@ -148,6 +186,15 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        int MAX_PIECE = 2048;
+        int len = 3;
+        for (int i = 0; i <= len; i++) {
+            for (int j = 0; j <= len; j++) {
+                if (b.tile(i,j) != null) {
+                    if (b.tile(i,j).value() == MAX_PIECE) return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,6 +206,24 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) {
+            return true;
+        }
+
+        for (int j = 0; j <= 3; j++) {
+            for (int i = 0; i <= 3; i++) {
+                if (i > 0) {
+                    if (b.tile(j,i).value() == b.tile(j,i-1).value()) {
+                        return true;
+                    }
+                }
+                if (j > 0) {
+                    if (b.tile(j,i).value() == b.tile(j - 1,i).value()) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
