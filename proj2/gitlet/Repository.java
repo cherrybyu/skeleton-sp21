@@ -17,7 +17,7 @@ import static gitlet.Utils.*;
  *
  *  @author TODO
  */
-public class Repository {
+public class Repository implements Serializable {
     /**
      * TODO: add instance variables here.
      *
@@ -27,14 +27,14 @@ public class Repository {
      */
 
     /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public transient final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    public transient final File GITLET_DIR = join(CWD, ".gitlet");
 
-    public File COMMIT_DIR = join(GITLET_DIR, "commits");
-    public File BLOB_DIR = join(GITLET_DIR, "blobs");
-
-    private HashMap commitHistory = new HashMap();
+    public transient File COMMIT_DIR = join(GITLET_DIR, "commits");
+    public transient File BLOB_DIR = join(GITLET_DIR, "blobs");
+    private HashMap<String, String> stagingArea = new HashMap<>();
+    private HashMap<String, CommitData> commitHistory = new HashMap<>();
     private String headCommit;
 
     /* TODO: fill in the rest of this class. */
@@ -53,6 +53,10 @@ public class Repository {
 
         Commit initCommit = new Commit(null, null, "initial commit", null, Date.from(Instant.EPOCH));
         saveCommit(initCommit);
+    }
+
+    public void addCommand(String fileName) {
+
     }
 
 //    private Commit createCommit(String parentId, String parentId2, String message, HashMap blobs, Date timestamp) {
@@ -82,9 +86,14 @@ public class Repository {
     private void saveBlob() {
 
     }
+
+    private boolean stageBlob() {
+
+    }
+
 }
 
-class CommitData {
+class CommitData implements Serializable {
     public String commitParentId;
     public Date commitTimestamp;
     public String commitMessage;

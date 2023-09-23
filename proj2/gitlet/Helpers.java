@@ -10,7 +10,7 @@ public class Helpers {
      * hash and the serialized object. */
     public static FileData getObjectAndId(Object object) {
         byte[] serializedObject = serialize((Serializable) object);
-        String objectId = Utils.sha1(object);
+        String objectId = Utils.sha1(serializedObject);
         return new FileData(objectId, serializedObject);
     }
 }
