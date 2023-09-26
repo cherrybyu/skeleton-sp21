@@ -25,6 +25,7 @@ public class Main {
         String message;
         String branchName;
         String commitId;
+        Repository currRepo;
         switch(firstArg) {
             case "init":
                 // TODO: handle the `init` command
@@ -36,19 +37,27 @@ public class Main {
             case "add":
                 // TODO: handle the `add [filename]` command
                 fileName = args[1];
-                Repository currRepo = Utils.readObject(repository, Repository.class);
+                currRepo = Utils.readObject(repository, Repository.class);
                 currRepo.addCommand(fileName);
+                Utils.writeObject(repository, currRepo);
+//                Repository repo = Utils.readObject(repository, Repository.class);
+//                System.out.println(repo.stagingArea);
+//                System.out.println(repo.commitHistory.get("473619c1cc5b19a74354c9ccc97abd9f59ac4b4f").commitTimestamp);
                 break;
             // TODO: FILL THE REST IN
             case "commit":
                 // TODO: handle the `commit [log message]` command
                 message = args[1];
-
+                currRepo = Utils.readObject(repository, Repository.class);
+                currRepo.commitCommand(message);
+                Utils.writeObject(repository, currRepo);
                 break;
             case "rm":
                 // TODO: handle the `rm [fileName]` command
                 fileName = args[1];
-
+                currRepo = Utils.readObject(repository, Repository.class);
+                currRepo.rmCommand(fileName);
+                Utils.writeObject(repository, currRepo);
                 break;
             case "log":
                 // TODO: handle the `log` command

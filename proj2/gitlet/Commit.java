@@ -26,7 +26,7 @@ public class Commit implements Serializable {
     private String parentId2;
     private Date timestamp;
     private String message;
-    private HashMap blobs = new HashMap();
+    private HashMap blobs;
 
 
     /* TODO: fill in the rest of this class. */
@@ -52,5 +52,9 @@ public class Commit implements Serializable {
 
     public String getMessage() {
         return message;
+    }
+
+    public HashMap getBlobs() {
+        return blobs;
     }
 }
