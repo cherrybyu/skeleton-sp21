@@ -33,7 +33,7 @@ public class CapersRepository {
      * Remember: recommended structure (you do not have to follow):
      *
      * .capers/ -- top level folder for all persistent data in your lab12 folder
-     *    - dogs/ -- folder containing all of the persistent data for dogs
+     *    - dogs/ -- folder containing all the persistent data for dogs
      *    - story -- file containing the current story
      */
     public static void setupPersistence() throws IOException {
