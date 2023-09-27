@@ -20,6 +20,7 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
         // TODO: what if args is empty?
+        try {
         String firstArg = args[0];
         String fileName;
         String message;
@@ -106,6 +107,10 @@ public class Main {
                 // TODO: handle the `merge [branchName]` command
                 branchName = args[1];
                 break;
+        }
+        } catch (IOException e) {
+            // Handle the exception here (e.g., print an error message)
+            e.printStackTrace();
         }
     }
 }
