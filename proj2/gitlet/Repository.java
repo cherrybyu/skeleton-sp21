@@ -6,9 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -40,6 +38,9 @@ public class Repository implements Serializable {
     public ArrayList<String> removalArea = new ArrayList<>();
     public HashMap<String, CommitData> commitHistory = new HashMap<>();
     private String headCommit;
+    public HashMap<String, String> branches = new HashMap<>();
+    public String activeBranch;
+
 
     /* TODO: fill in the rest of this class. */
 
@@ -58,6 +59,8 @@ public class Repository implements Serializable {
 
         Commit initCommit = new Commit(null, null, "initial commit", null, Date.from(Instant.EPOCH));
         saveCommit(initCommit);
+        branches.put("master", headCommit);
+        activeBranch = "master";
     }
 
     public void addCommand(String fileName) throws IOException {
@@ -81,8 +84,7 @@ public class Repository implements Serializable {
     }
 
     public void commitCommand(String message) throws IOException {
-        HashMap<String, String> blobs = new HashMap<>();
-        blobs.putAll(stagingArea);
+        HashMap<String, String> blobs = new HashMap<>(stagingArea);
         stagingArea.clear();
 
         Date timeStamp = Date.from(Instant.now());
@@ -97,27 +99,115 @@ public class Repository implements Serializable {
     public void rmCommand(String fileName) {
         if (stagingArea.containsKey(fileName)) {
             stagingArea.remove(fileName);
-            System.out.println(fileName + "removed");
+
+            if (!removalArea.contains(fileName)) {
+                removalArea.add(fileName);
+            }
+            System.out.println("removed "+ fileName );
         }
 
-        File currCommitFile = Utils.join(COMMIT_DIR, headCommit.substring(0,6));
+        File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
         Commit currCommit = readObject(currCommitFile, Commit.class);
-        System.out.println(plainFilenamesIn(CWD).contains(fileName));
-        System.out.println(currCommit.getBlobs().containsKey(fileName) );
+//        System.out.println(plainFilenamesIn(CWD).contains(fileName));
+//        System.out.println(currCommit.getBlobs().containsKey(fileName) );
 
-        //TODO: WHY ISN'T IT WORKING
-        if (currCommit.getBlobs().containsKey(fileName) && plainFilenamesIn(CWD).contains(fileName)) {
-            Utils.restrictedDelete(fileName);
-            removalArea.add(fileName);
-            System.out.println(fileName);
-            System.out.println(removalArea.get(0));
-        } else if (currCommit.getBlobs().containsKey(fileName) && !plainFilenamesIn(GITLET_DIR).contains(fileName)) {
-            removalArea.add(fileName);
-        }
+        if (currCommit.getBlobs() != null) {
+            if (currCommit.getBlobs().containsKey(fileName) && plainFilenamesIn(CWD).contains(fileName)) {
+                Utils.restrictedDelete(fileName);
+                removalArea.add(fileName);
 
-        if (!stagingArea.containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
-            //TODO: error if there is no file to be removed
+                System.out.println("removed "+ fileName);
+                System.out.println(removalArea.get(0));
+            } else if (currCommit.getBlobs().containsKey(fileName) && !plainFilenamesIn(GITLET_DIR).contains(fileName)) {
+                removalArea.add(fileName);
+            }
+
+            if (!stagingArea.containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
+                //TODO: error if there is no file to be removed
+            }
         }
+    }
+
+    public void logCommand() {
+        CommitData currCommit = commitHistory.get(headCommit);
+        String currCommitId = headCommit;
+        while (currCommit != null) {
+            System.out.println("===");
+            System.out.println("commit " + currCommitId);
+            System.out.println("Date: " + currCommit.commitTimestamp);
+            System.out.println(currCommit.commitMessage);
+            System.out.println();
+            
+            currCommitId = currCommit.commitParentId;
+            currCommit = commitHistory.get(currCommit.commitParentId);
+        }
+    }
+
+    public void globalLogCommand() {
+        List files = Utils.plainFilenamesIn(COMMIT_DIR);
+
+        for (int i = 0; i < files.size(); i ++) {
+            CommitData currCommit = commitHistory.get(files.get(i));
+
+            System.out.println("===");
+            System.out.println("commit " + files.get(i));
+            System.out.println("Date: " + currCommit.commitTimestamp);
+            System.out.println(currCommit.commitMessage);
+            System.out.println();
+        }
+    }
+
+    public void findCommand(String message) {
+        CommitData currCommit = commitHistory.get(headCommit);
+        String currCommitId = headCommit;
+        while (currCommit != null) {
+            if (currCommit.commitMessage.contains(message)) {
+                System.out.println(currCommitId);
+            }
+            currCommitId = currCommit.commitParentId;
+            currCommit = commitHistory.get(currCommit.commitParentId);
+        }
+    }
+
+    public void statusCommand() {
+        System.out.println("=== Branches ===");
+        String[] branchKeys = branches.keySet().toArray(new String[0]);
+        Arrays.sort(branchKeys);
+        for (String key: branchKeys) {
+            if (key.equals(activeBranch)) {
+                System.out.println("*" + key);
+            } else {
+                System.out.println(key);
+            }
+        }
+        System.out.println();
+
+        System.out.println("=== Staged Files ===");
+        if (!stagingArea.isEmpty()) {
+            String[] stagingKeys = stagingArea.keySet().toArray(new String[0]);
+            Arrays.sort(stagingKeys);
+            for (String key : stagingKeys) {
+                System.out.println(key);
+            }
+        }
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        if (!removalArea.isEmpty()) {
+            Collections.sort(removalArea);
+            for (String file: removalArea) {
+                System.out.println(file);
+            }
+        }
+        System.out.println();
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        //TODO: DO THIS LATER
+        System.out.println();
+
+        System.out.println("=== Untracked Files ===");
+        //TODO: DO THIS LATER
+        System.out.println();
     }
 
 //    private Commit createCommit(String parentId, String parentId2, String message, HashMap blobs, Date timestamp) {
@@ -136,22 +226,15 @@ public class Repository implements Serializable {
         String commitId = fileData.id;
         byte[] serializedCommit = fileData.serialized;
 
-        File commitFile = Utils.join(COMMIT_DIR, commitId.substring(0,6));
+        File commitFile = Utils.join(COMMIT_DIR, commitId);
         commitFile.createNewFile();
         writeContents(commitFile, serializedCommit);
 
         CommitData commitData = new CommitData(commit.getParentId(), commit.getTimestamp(), commit.getMessage());
         commitHistory.put(commitId, commitData);
         headCommit = commitId;
+        removalArea.clear();
     }
-    private void saveBlob(Blob blob) {
-
-    }
-
-    private void stageBlob(String fileName, Blob blob) {
-
-    }
-
 }
 
 class CommitData implements Serializable {

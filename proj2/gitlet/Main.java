@@ -61,17 +61,28 @@ public class Main {
                 break;
             case "log":
                 // TODO: handle the `log` command
+                currRepo = Utils.readObject(repository, Repository.class);
+                currRepo.logCommand();
+                Utils.writeObject(repository, currRepo);
                 break;
             case "global-log":
                 // TODO: handle the `global-log` command
+                currRepo = Utils.readObject(repository, Repository.class);
+                currRepo.globalLogCommand();
+                Utils.writeObject(repository, currRepo);
                 break;
             case "find":
                 // TODO: handle the `find [commit message]` command
                 message = args[1];
-
+                currRepo = Utils.readObject(repository, Repository.class);
+                currRepo.findCommand(message);
+                Utils.writeObject(repository, currRepo);
                 break;
             case "status":
                 // TODO: handle the `status` command
+                currRepo = Utils.readObject(repository, Repository.class);
+                currRepo.statusCommand();
+                Utils.writeObject(repository, currRepo);
                 break;
             case "checkout":
                 // TODO: handle the `checkout -- [fileName]` command
