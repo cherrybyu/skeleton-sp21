@@ -109,9 +109,7 @@ public class Repository implements Serializable {
 
         File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
         Commit currCommit = readObject(currCommitFile, Commit.class);
-        for (Object key: currCommit.getBlobs().keySet()) {
-            Utils.message(key.toString());
-        }
+
         if (currCommit.getBlobs() != null) {
             if (currCommit.getBlobs().containsKey(fileName) && plainFilenamesIn(CWD).contains(fileName)) {
                 Utils.restrictedDelete(fileName);
