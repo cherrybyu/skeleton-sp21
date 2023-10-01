@@ -100,31 +100,18 @@ public class Repository implements Serializable {
         Date timeStamp = Date.from(Instant.now());
         Commit newCommit = new Commit(headCommit, null, message, blobs, timeStamp);
         saveCommit(newCommit);
-
-//        System.out.println(commitHistory.get(headCommit).commitMessage);
-//        System.out.println(commitHistory.get(headCommit).commitTimestamp);
-//        System.out.println(commitHistory.get(headCommit).commitParentId);
     }
 
     public void rmCommand(String fileName) {
-        //            if (!removalArea.contains(fileName)) {
-        //                removalArea.add(fileName);
-        //            }
-        //            System.out.println("removed "+ fileName );
         stagingArea.remove(fileName);
 
         File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
         Commit currCommit = readObject(currCommitFile, Commit.class);
-//        System.out.println(plainFilenamesIn(CWD).contains(fileName));
-//        System.out.println(currCommit.getBlobs().containsKey(fileName) );
 
         if (currCommit.getBlobs() != null) {
             if (currCommit.getBlobs().containsKey(fileName) && plainFilenamesIn(CWD).contains(fileName)) {
                 Utils.restrictedDelete(fileName);
                 removalArea.add(fileName);
-
-                System.out.println("removed "+ fileName);
-                System.out.println(removalArea.get(0));
             } else if (currCommit.getBlobs().containsKey(fileName) && !plainFilenamesIn(GITLET_DIR).contains(fileName)) {
                 removalArea.add(fileName);
             }
@@ -139,12 +126,11 @@ public class Repository implements Serializable {
         CommitData currCommit = commitHistory.get(headCommit);
         String currCommitId = headCommit;
         while (currCommit != null) {
-            System.out.println("===");
-            System.out.println("commit " + currCommitId);
-            System.out.println("Date: " + currCommit.commitTimestamp);
-            System.out.println(currCommit.commitMessage);
-            System.out.println();
-            
+            Utils.message("===");
+            Utils.message("commit " + currCommitId);
+            Utils.message("Date: " + currCommit.commitTimestamp);
+            Utils.message(currCommit.commitMessage);
+
             currCommitId = currCommit.commitParentId;
             currCommit = commitHistory.get(currCommit.commitParentId);
         }
@@ -157,65 +143,67 @@ public class Repository implements Serializable {
         for (String file : files) {
             CommitData currCommit = commitHistory.get(file);
 
-            System.out.println("===");
-            System.out.println("commit " + file);
-            System.out.println("Date: " + currCommit.commitTimestamp);
-            System.out.println(currCommit.commitMessage);
-            System.out.println();
+            Utils.message("===");
+            Utils.message("commit " + file);
+            Utils.message("Date: " + currCommit.commitTimestamp);
+            Utils.message(currCommit.commitMessage);
         }
     }
 
     public void findCommand(String message) {
         CommitData currCommit = commitHistory.get(headCommit);
         String currCommitId = headCommit;
+        ArrayList<String> messagesToPrint = new ArrayList<>();
+
         while (currCommit != null) {
             if (currCommit.commitMessage.contains(message)) {
-                System.out.println(currCommitId);
+                messagesToPrint.add(currCommitId);
             }
             currCommitId = currCommit.commitParentId;
             currCommit = commitHistory.get(currCommit.commitParentId);
         }
+        if (messagesToPrint.isEmpty()) {
+            Utils.message("Found no commit with that message.");
+        }
+        for (String msg: messagesToPrint) {
+            Utils.message(msg);
+        }
     }
 
     public void statusCommand() {
-        System.out.println("=== Branches ===");
+        Utils.message("=== Branches ===");
         String[] branchKeys = branches.keySet().toArray(new String[0]);
         Arrays.sort(branchKeys);
         for (String key: branchKeys) {
             if (key.equals(activeBranch)) {
-                System.out.println("*" + key);
+                Utils.message("*" + key);
             } else {
-                System.out.println(key);
+                Utils.message(key);
             }
         }
-        System.out.println();
 
-        System.out.println("=== Staged Files ===");
+        Utils.message("=== Staged Files ===");
         if (!stagingArea.isEmpty()) {
             String[] stagingKeys = stagingArea.keySet().toArray(new String[0]);
             Arrays.sort(stagingKeys);
             for (String key : stagingKeys) {
-                System.out.println(key);
+                Utils.message(key);
             }
         }
-        System.out.println();
 
-        System.out.println("=== Removed Files ===");
+        Utils.message("=== Removed Files ===");
         if (!removalArea.isEmpty()) {
             Collections.sort(removalArea);
             for (String file: removalArea) {
-                System.out.println(file);
+                Utils.message(file);
             }
         }
-        System.out.println();
 
-        System.out.println("=== Modifications Not Staged For Commit ===");
+        Utils.message("=== Modifications Not Staged For Commit ===");
         //TODO: DO THIS LATER
-        System.out.println();
 
-        System.out.println("=== Untracked Files ===");
+        Utils.message("=== Untracked Files ===");
         //TODO: DO THIS LATER
-        System.out.println();
     }
 
 //    private Commit createCommit(String parentId, String parentId2, String message, HashMap blobs, Date timestamp) {
