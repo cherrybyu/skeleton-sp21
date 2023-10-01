@@ -1,13 +1,10 @@
 package gitlet;
 
-
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.*;
-
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -51,7 +48,10 @@ public class Repository implements Serializable {
      * stamp.
      */
     public void initCommand() throws IOException {
-        //TODO: IF .gitlet directory already exists, throw error
+        if (plainFilenamesIn(CWD).contains(".gitlet")) {
+            throw Utils.error("A Gitlet version-control system already exists in the current directory.");
+        }
+
         CWD.mkdir();
         GITLET_DIR.mkdir();
         COMMIT_DIR.mkdir();
@@ -64,6 +64,10 @@ public class Repository implements Serializable {
     }
 
     public void addCommand(String fileName) throws IOException {
+        if (!plainFilenamesIn(GITLET_DIR).contains(fileName)) {
+            throw Utils.error("File does not exist.");
+        }
+
         File originalFile = Utils.join(CWD, fileName);
         byte[] fileContents = readContents(originalFile);
 
@@ -84,6 +88,14 @@ public class Repository implements Serializable {
     }
 
     public void commitCommand(String message) throws IOException {
+        if (message == null || message.equals("")) {
+            throw Utils.error("Please enter a commit message.");
+        }
+
+        if (stagingArea.isEmpty()) {
+            throw Utils.error("No changes added to the commit.");
+        }
+
         HashMap<String, String> blobs = new HashMap<>(stagingArea);
         stagingArea.clear();
 
@@ -103,7 +115,7 @@ public class Repository implements Serializable {
             if (!removalArea.contains(fileName)) {
                 removalArea.add(fileName);
             }
-            System.out.println("removed "+ fileName );
+//            System.out.println("removed "+ fileName );
         }
 
         File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
@@ -124,6 +136,7 @@ public class Repository implements Serializable {
 
             if (!stagingArea.containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
                 //TODO: error if there is no file to be removed
+                Utils.error("No reason to remove the file.");
             }
         }
     }
@@ -144,13 +157,14 @@ public class Repository implements Serializable {
     }
 
     public void globalLogCommand() {
-        List files = Utils.plainFilenamesIn(COMMIT_DIR);
+        List<String> files = Utils.plainFilenamesIn(COMMIT_DIR);
 
-        for (int i = 0; i < files.size(); i ++) {
-            CommitData currCommit = commitHistory.get(files.get(i));
+        assert files != null;
+        for (String file : files) {
+            CommitData currCommit = commitHistory.get(file);
 
             System.out.println("===");
-            System.out.println("commit " + files.get(i));
+            System.out.println("commit " + file);
             System.out.println("Date: " + currCommit.commitTimestamp);
             System.out.println(currCommit.commitMessage);
             System.out.println();
@@ -225,6 +239,10 @@ public class Repository implements Serializable {
 
         String commitId = fileData.id;
         byte[] serializedCommit = fileData.serialized;
+
+//        if (plainFilenamesIn(COMMIT_DIR).contains(commitId)) {
+//            Utils.error("No changes added to the commit.");
+//        }
 
         File commitFile = Utils.join(COMMIT_DIR, commitId);
         commitFile.createNewFile();
