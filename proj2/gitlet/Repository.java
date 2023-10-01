@@ -49,7 +49,7 @@ public class Repository implements Serializable {
      */
     public void initCommand() throws IOException {
         if (GITLET_DIR.exists()) {
-            throw Utils.error("A Gitlet version-control system already exists in the current directory.");
+            Utils.message("A Gitlet version-control system already exists in the current directory.");
         }
 
         CWD.mkdir();
@@ -65,7 +65,7 @@ public class Repository implements Serializable {
 
     public void addCommand(String fileName) throws IOException {
         if (!plainFilenamesIn(CWD).contains(fileName)) {
-            throw Utils.error("File does not exist.");
+            Utils.message("File does not exist.");
         }
 
         File originalFile = Utils.join(CWD, fileName);
@@ -77,23 +77,21 @@ public class Repository implements Serializable {
         String blobId = fileData.id;
         byte[] serializedBlob = fileData.serialized;
 
-        if (!commitHistory.containsValue(blobId)) {
+        if (!plainFilenamesIn(BLOB_DIR).contains(blobId)) {
             stagingArea.put(fileName, blobId);
-            File blobFile = Utils.join(BLOB_DIR, blobId.substring(0,6));
+            File blobFile = Utils.join(BLOB_DIR, blobId);
             blobFile.createNewFile();
             writeContents(blobFile, serializedBlob);
-        } else {
-            //TODO: throw error if sha1 already exists
         }
     }
 
     public void commitCommand(String message) throws IOException {
-        if (message == null || message.equals("")) {
-            throw Utils.error("Please enter a commit message.");
+        if (message == null || message.isEmpty()) {
+            Utils.message("Please enter a commit message.");
         }
 
         if (stagingArea.isEmpty()) {
-            throw Utils.error("No changes added to the commit.");
+            Utils.message("No changes added to the commit.");
         }
 
         HashMap<String, String> blobs = new HashMap<>(stagingArea);
@@ -109,14 +107,11 @@ public class Repository implements Serializable {
     }
 
     public void rmCommand(String fileName) {
-        if (stagingArea.containsKey(fileName)) {
-            stagingArea.remove(fileName);
-
-//            if (!removalArea.contains(fileName)) {
-//                removalArea.add(fileName);
-//            }
-//            System.out.println("removed "+ fileName );
-        }
+        //            if (!removalArea.contains(fileName)) {
+        //                removalArea.add(fileName);
+        //            }
+        //            System.out.println("removed "+ fileName );
+        stagingArea.remove(fileName);
 
         File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
         Commit currCommit = readObject(currCommitFile, Commit.class);
@@ -135,8 +130,7 @@ public class Repository implements Serializable {
             }
 
             if (!stagingArea.containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
-                //TODO: error if there is no file to be removed
-                Utils.error("No reason to remove the file.");
+                Utils.message("No reason to remove the file.");
             }
         }
     }
@@ -239,10 +233,6 @@ public class Repository implements Serializable {
 
         String commitId = fileData.id;
         byte[] serializedCommit = fileData.serialized;
-
-//        if (plainFilenamesIn(COMMIT_DIR).contains(commitId)) {
-//            Utils.error("No changes added to the commit.");
-//        }
 
         File commitFile = Utils.join(COMMIT_DIR, commitId);
         commitFile.createNewFile();
