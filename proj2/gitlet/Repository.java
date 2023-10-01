@@ -88,10 +88,12 @@ public class Repository implements Serializable {
     public void commitCommand(String message) throws IOException {
         if (message == null || message.isEmpty()) {
             Utils.message("Please enter a commit message.");
+            return;
         }
 
-        if (stagingArea.isEmpty()) {
+        if (stagingArea.isEmpty() && removalArea.isEmpty()) {
             Utils.message("No changes added to the commit.");
+            return;
         }
 
         HashMap<String, String> blobs = new HashMap<>(stagingArea);
@@ -107,7 +109,9 @@ public class Repository implements Serializable {
 
         File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
         Commit currCommit = readObject(currCommitFile, Commit.class);
-
+        for (Object key: currCommit.getBlobs().keySet()) {
+            Utils.message(key.toString());
+        }
         if (currCommit.getBlobs() != null) {
             if (currCommit.getBlobs().containsKey(fileName) && plainFilenamesIn(CWD).contains(fileName)) {
                 Utils.restrictedDelete(fileName);
@@ -130,6 +134,7 @@ public class Repository implements Serializable {
             Utils.message("commit " + currCommitId);
             Utils.message("Date: " + currCommit.commitTimestamp);
             Utils.message(currCommit.commitMessage);
+            System.out.println();
 
             currCommitId = currCommit.commitParentId;
             currCommit = commitHistory.get(currCommit.commitParentId);
@@ -147,6 +152,7 @@ public class Repository implements Serializable {
             Utils.message("commit " + file);
             Utils.message("Date: " + currCommit.commitTimestamp);
             Utils.message(currCommit.commitMessage);
+            System.out.println();
         }
     }
 
@@ -181,6 +187,7 @@ public class Repository implements Serializable {
                 Utils.message(key);
             }
         }
+        System.out.println();
 
         Utils.message("=== Staged Files ===");
         if (!stagingArea.isEmpty()) {
@@ -190,6 +197,7 @@ public class Repository implements Serializable {
                 Utils.message(key);
             }
         }
+        System.out.println();
 
         Utils.message("=== Removed Files ===");
         if (!removalArea.isEmpty()) {
@@ -198,12 +206,15 @@ public class Repository implements Serializable {
                 Utils.message(file);
             }
         }
+        System.out.println();
 
         Utils.message("=== Modifications Not Staged For Commit ===");
         //TODO: DO THIS LATER
+        System.out.println();
 
         Utils.message("=== Untracked Files ===");
         //TODO: DO THIS LATER
+        System.out.println();
     }
 
 //    private Commit createCommit(String parentId, String parentId2, String message, HashMap blobs, Date timestamp) {
