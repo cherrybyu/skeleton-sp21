@@ -48,7 +48,7 @@ public class Repository implements Serializable {
      * stamp.
      */
     public void initCommand() throws IOException {
-        if (plainFilenamesIn(CWD).contains(".gitlet")) {
+        if (GITLET_DIR.exists()) {
             throw Utils.error("A Gitlet version-control system already exists in the current directory.");
         }
 
@@ -112,9 +112,9 @@ public class Repository implements Serializable {
         if (stagingArea.containsKey(fileName)) {
             stagingArea.remove(fileName);
 
-            if (!removalArea.contains(fileName)) {
-                removalArea.add(fileName);
-            }
+//            if (!removalArea.contains(fileName)) {
+//                removalArea.add(fileName);
+//            }
 //            System.out.println("removed "+ fileName );
         }
 
