@@ -64,7 +64,7 @@ public class Repository implements Serializable {
     }
 
     public void addCommand(String fileName) throws IOException {
-        if (!plainFilenamesIn(GITLET_DIR).contains(fileName)) {
+        if (!plainFilenamesIn(CWD).contains(fileName)) {
             throw Utils.error("File does not exist.");
         }
 
@@ -103,9 +103,9 @@ public class Repository implements Serializable {
         Commit newCommit = new Commit(headCommit, null, message, blobs, timeStamp);
         saveCommit(newCommit);
 
-        System.out.println(commitHistory.get(headCommit).commitMessage);
-        System.out.println(commitHistory.get(headCommit).commitTimestamp);
-        System.out.println(commitHistory.get(headCommit).commitParentId);
+//        System.out.println(commitHistory.get(headCommit).commitMessage);
+//        System.out.println(commitHistory.get(headCommit).commitTimestamp);
+//        System.out.println(commitHistory.get(headCommit).commitParentId);
     }
 
     public void rmCommand(String fileName) {
