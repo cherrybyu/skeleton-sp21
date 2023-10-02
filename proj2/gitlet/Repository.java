@@ -73,6 +73,11 @@ public class Repository implements Serializable {
                 throw new IllegalArgumentException("File does not exist");
             }
 
+            if (removalArea.contains(fileName)) {
+                removalArea.remove(fileName);
+                return;
+            }
+
             File originalFile = Utils.join(CWD, fileName);
             byte[] fileContents = readContents(originalFile);
 
@@ -91,7 +96,6 @@ public class Repository implements Serializable {
                 stagingArea.put(fileName, blobId);
             }
 
-            removalArea.remove(fileName);
         } catch (IllegalArgumentException e) {
             Utils.message(e.getMessage());
 
