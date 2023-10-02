@@ -83,12 +83,15 @@ public class Repository implements Serializable {
             byte[] serializedBlob = fileData.serialized;
 
             if (!plainFilenamesIn(BLOB_DIR).contains(blobId)) {
-                removalArea.remove(fileName);
                 stagingArea.put(fileName, blobId);
                 File blobFile = Utils.join(BLOB_DIR, blobId);
                 blobFile.createNewFile();
                 writeContents(blobFile, serializedBlob);
+            } else {
+                stagingArea.put(fileName, blobId);
             }
+
+            removalArea.remove(fileName);
         } catch (IllegalArgumentException e) {
             Utils.message(e.getMessage());
 
@@ -116,22 +119,27 @@ public class Repository implements Serializable {
     }
 
     public void rmCommand(String fileName) {
-        stagingArea.remove(fileName);
+        try {
+            if (stagingArea.containsKey(fileName)) {
+                stagingArea.remove(fileName);
+            } else {
+                File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
+                Commit currCommit = readObject(currCommitFile, Commit.class);
+                HashMap currBlobs = currCommit.getBlobs();
 
-        File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
-        Commit currCommit = readObject(currCommitFile, Commit.class);
-
-        if (currCommit.getBlobs() != null) {
-            if (currCommit.getBlobs().containsKey(fileName) && plainFilenamesIn(CWD).contains(fileName)) {
-                Utils.restrictedDelete(fileName);
-                removalArea.add(fileName);
-            } else if (currCommit.getBlobs().containsKey(fileName) && !plainFilenamesIn(GITLET_DIR).contains(fileName)) {
-                removalArea.add(fileName);
+                if (currBlobs.containsKey(fileName)) {
+                    if (plainFilenamesIn(CWD).contains(fileName)) {
+                        Utils.restrictedDelete(fileName);
+                        removalArea.add(fileName);
+                    } else {
+                        removalArea.add(fileName);
+                    }
+                } else {
+                    throw new IllegalArgumentException("No reason to remove the file.");
+                }
             }
-
-            if (!stagingArea.containsKey(fileName) && !currCommit.getBlobs().containsKey(fileName)) {
-                Utils.message("No reason to remove the file.");
-            }
+        } catch (IllegalArgumentException e){
+            Utils.message(e.getMessage());
         }
     }
 
