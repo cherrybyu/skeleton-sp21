@@ -61,7 +61,7 @@ public class Repository implements Serializable {
 
         Date timeStamp = Date.from(Instant.EPOCH);
         String formattedDate = sdf.format(timeStamp);
-        Commit initCommit = new Commit(null, null, "initial commit", null, formattedDate);
+        Commit initCommit = new Commit(null, null, "initial commit", new HashMap<>(), formattedDate);
         saveCommit(initCommit);
         branches.put("master", headCommit);
         activeBranch = "master";
@@ -83,6 +83,7 @@ public class Repository implements Serializable {
             byte[] serializedBlob = fileData.serialized;
 
             if (!plainFilenamesIn(BLOB_DIR).contains(blobId)) {
+                removalArea.remove(fileName);
                 stagingArea.put(fileName, blobId);
                 File blobFile = Utils.join(BLOB_DIR, blobId);
                 blobFile.createNewFile();
