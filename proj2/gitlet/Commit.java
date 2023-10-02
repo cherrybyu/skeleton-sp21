@@ -24,13 +24,13 @@ public class Commit implements Serializable {
 
     private String parentId;
     private String parentId2;
-    private Date timestamp;
+    private String timestamp;
     private String message;
     private HashMap blobs;
 
 
     /* TODO: fill in the rest of this class. */
-    public Commit(String parentId, String parentId2, String message, HashMap blobs, Date timestamp) {
+    public Commit(String parentId, String parentId2, String message, HashMap blobs, String timestamp) {
         this.parentId = parentId;
         this.parentId2 = parentId2;
         this.message = message;
@@ -46,7 +46,7 @@ public class Commit implements Serializable {
         return parentId2;
     }
 
-    public Date getTimestamp() {
+    public String getTimestamp() {
         return timestamp;
     }
 

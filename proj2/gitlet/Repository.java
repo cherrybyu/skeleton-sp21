@@ -3,6 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import static gitlet.Utils.*;
@@ -31,6 +32,7 @@ public class Repository implements Serializable {
 
     public File COMMIT_DIR = join(GITLET_DIR, "commits");
     public File BLOB_DIR = join(GITLET_DIR, "blobs");
+    SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
     public HashMap<String, String> stagingArea = new HashMap<>();
     public ArrayList<String> removalArea = new ArrayList<>();
     public HashMap<String, CommitData> commitHistory = new HashMap<>();
@@ -57,7 +59,9 @@ public class Repository implements Serializable {
         COMMIT_DIR.mkdir();
         BLOB_DIR.mkdir();
 
-        Commit initCommit = new Commit(null, null, "initial commit", null, Date.from(Instant.EPOCH));
+        Date timeStamp = Date.from(Instant.EPOCH);
+        String formattedDate = sdf.format(timeStamp);
+        Commit initCommit = new Commit(null, null, "initial commit", null, formattedDate);
         saveCommit(initCommit);
         branches.put("master", headCommit);
         activeBranch = "master";
@@ -100,7 +104,8 @@ public class Repository implements Serializable {
         stagingArea.clear();
 
         Date timeStamp = Date.from(Instant.now());
-        Commit newCommit = new Commit(headCommit, null, message, blobs, timeStamp);
+        String formattedDate = sdf.format(timeStamp);
+        Commit newCommit = new Commit(headCommit, null, message, blobs, formattedDate);
         saveCommit(newCommit);
     }
 
@@ -244,10 +249,10 @@ public class Repository implements Serializable {
 
 class CommitData implements Serializable {
     public String commitParentId;
-    public Date commitTimestamp;
+    public String commitTimestamp;
     public String commitMessage;
 
-    public CommitData(String commitParentId, Date commitTimestamp, String commitMessage) {
+    public CommitData(String commitParentId, String commitTimestamp, String commitMessage) {
         this.commitParentId = commitParentId;
         this.commitTimestamp = commitTimestamp;
         this.commitMessage = commitMessage;
