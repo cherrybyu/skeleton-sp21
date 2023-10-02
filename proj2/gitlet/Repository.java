@@ -68,24 +68,29 @@ public class Repository implements Serializable {
     }
 
     public void addCommand(String fileName) throws IOException {
-        if (!plainFilenamesIn(CWD).contains(fileName)) {
-            Utils.message("File does not exist.");
-        }
+        try {
+            if (!plainFilenamesIn(CWD).contains(fileName)) {
+                throw new IllegalArgumentException("File does not exist");
+            }
 
-        File originalFile = Utils.join(CWD, fileName);
-        byte[] fileContents = readContents(originalFile);
+            File originalFile = Utils.join(CWD, fileName);
+            byte[] fileContents = readContents(originalFile);
 
-        Blob newBlob = new Blob(fileName, fileContents);
-        FileData fileData = Helpers.getObjectAndId(newBlob);
+            Blob newBlob = new Blob(fileName, fileContents);
+            FileData fileData = Helpers.getObjectAndId(newBlob);
 
-        String blobId = fileData.id;
-        byte[] serializedBlob = fileData.serialized;
+            String blobId = fileData.id;
+            byte[] serializedBlob = fileData.serialized;
 
-        if (!plainFilenamesIn(BLOB_DIR).contains(blobId)) {
-            stagingArea.put(fileName, blobId);
-            File blobFile = Utils.join(BLOB_DIR, blobId);
-            blobFile.createNewFile();
-            writeContents(blobFile, serializedBlob);
+            if (!plainFilenamesIn(BLOB_DIR).contains(blobId)) {
+                stagingArea.put(fileName, blobId);
+                File blobFile = Utils.join(BLOB_DIR, blobId);
+                blobFile.createNewFile();
+                writeContents(blobFile, serializedBlob);
+            }
+        } catch (IllegalArgumentException e) {
+            Utils.message(e.getMessage());
+
         }
     }
 
