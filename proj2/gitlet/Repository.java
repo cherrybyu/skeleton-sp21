@@ -92,13 +92,10 @@ public class Repository implements Serializable {
                 File blobFile = Utils.join(BLOB_DIR, blobId);
                 blobFile.createNewFile();
                 writeContents(blobFile, serializedBlob);
-            } else {
-                stagingArea.put(fileName, blobId);
-            }
+            } 
 
         } catch (IllegalArgumentException e) {
             Utils.message(e.getMessage());
-
         }
     }
 
