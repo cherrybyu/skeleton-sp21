@@ -20,6 +20,9 @@ public class Main {
      */
     public static void main(String[] args) {
         // TODO: what if args is empty?
+        if (args.length == 0) {
+            Utils.message("Please enter a command.");
+        }
         try {
             String firstArg = args[0];
             String fileName;
@@ -29,67 +32,62 @@ public class Main {
             Repository currRepo;
             switch(firstArg) {
                 case "init":
-                    // TODO: handle the `init` command
+                    // `init` command
                     Repository newRepo = new Repository();
                     newRepo.initCommand();
                     repository.createNewFile();
                     Utils.writeObject(repository, newRepo);
                     break;
                 case "add":
-                    // TODO: handle the `add [filename]` command
+                    // `add [filename]` command
                     fileName = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.addCommand(fileName);
                     Utils.writeObject(repository, currRepo);
-    //                Repository repo = Utils.readObject(repository, Repository.class);
-    //                System.out.println(repo.stagingArea);
-    //                System.out.println(repo.commitHistory.get("473619c1cc5b19a74354c9ccc97abd9f59ac4b4f").commitTimestamp);
                     break;
-                // TODO: FILL THE REST IN
                 case "commit":
-                    // TODO: handle the `commit [log message]` command
+                    // `commit [log message]` command
                     message = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.commitCommand(message);
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "rm":
-                    // TODO: handle the `rm [fileName]` command
+                    // `rm [fileName]` command
                     fileName = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.rmCommand(fileName);
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "log":
-                    // TODO: handle the `log` command
+                    // `log` command
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.logCommand();
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "global-log":
-                    // TODO: handle the `global-log` command
+                    // `global-log` command
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.globalLogCommand();
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "find":
-                    // TODO: handle the `find [commit message]` command
+                    // `find [commit message]` command
                     message = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.findCommand(message);
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "status":
-                    // TODO: handle the `status` command
+                    // `status` command
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.statusCommand();
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "checkout":
-                    // TODO: handle the `checkout -- [fileName]` command
-                    // TODO: handle the `checkout [commit id] -- [fileName]` command
-                    // TODO: handle the `checkout [branchName]` command
-
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.checkoutCommand(args);
+                    Utils.writeObject(repository, currRepo);
                     break;
                 case "branch":
                     // TODO: handle the `branch [branchName]` command

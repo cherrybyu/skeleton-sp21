@@ -26,19 +26,21 @@ public class Repository implements Serializable {
      */
 
     /** The current working directory. */
-    public final File CWD = new File(System.getProperty("user.dir"));
+    private final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
-    public final File GITLET_DIR = join(CWD, ".gitlet");
-
-    public File COMMIT_DIR = join(GITLET_DIR, "commits");
-    public File BLOB_DIR = join(GITLET_DIR, "blobs");
-    SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
-    public HashMap<String, String> stagingArea = new HashMap<>();
-    public ArrayList<String> removalArea = new ArrayList<>();
-    public HashMap<String, CommitData> commitHistory = new HashMap<>();
+    private final File GITLET_DIR = join(CWD, ".gitlet");
+    /** The commit directory */
+    private File COMMIT_DIR = join(GITLET_DIR, "commits");
+    /** The blob directory */
+    private File BLOB_DIR = join(GITLET_DIR, "blobs");
+    private HashMap<String, String> branches = new HashMap<>();
+    private String activeBranch;
+    private HashMap<String, CommitData> commitHistory = new HashMap<>();
+    private HashMap<String, String> stagingArea = new HashMap<>();
+    private ArrayList<String> removalArea = new ArrayList<>();
     private String headCommit;
-    public HashMap<String, String> branches = new HashMap<>();
-    public String activeBranch;
+    private SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+
 
 
     /* TODO: fill in the rest of this class. */
@@ -87,12 +89,16 @@ public class Repository implements Serializable {
             String blobId = fileData.id;
             byte[] serializedBlob = fileData.serialized;
 
-            if (!plainFilenamesIn(BLOB_DIR).contains(blobId)) {
+            File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
+            Commit currCommit = readObject(currCommitFile, Commit.class);
+            HashMap currBlobs = currCommit.getBlobs();
+
+            if (!plainFilenamesIn(BLOB_DIR).contains(blobId) && currBlobs.get(fileName) != blobId) {
                 stagingArea.put(fileName, blobId);
                 File blobFile = Utils.join(BLOB_DIR, blobId);
                 blobFile.createNewFile();
                 writeContents(blobFile, serializedBlob);
-            } 
+            }
 
         } catch (IllegalArgumentException e) {
             Utils.message(e.getMessage());
@@ -208,21 +214,17 @@ public class Repository implements Serializable {
         System.out.println();
 
         Utils.message("=== Staged Files ===");
-        if (!stagingArea.isEmpty()) {
-            String[] stagingKeys = stagingArea.keySet().toArray(new String[0]);
-            Arrays.sort(stagingKeys);
-            for (String key : stagingKeys) {
-                Utils.message(key);
-            }
+        String[] stagingKeys = stagingArea.keySet().toArray(new String[0]);
+        Arrays.sort(stagingKeys);
+        for (String key : stagingKeys) {
+            Utils.message(key);
         }
         System.out.println();
 
         Utils.message("=== Removed Files ===");
-        if (!removalArea.isEmpty()) {
-            Collections.sort(removalArea);
-            for (String file: removalArea) {
-                Utils.message(file);
-            }
+        Collections.sort(removalArea);
+        for (String file: removalArea) {
+            Utils.message(file);
         }
         System.out.println();
 
@@ -235,11 +237,77 @@ public class Repository implements Serializable {
         System.out.println();
     }
 
-//    private Commit createCommit(String parentId, String parentId2, String message, HashMap blobs, Date timestamp) {
-//        Commit newCommit = new Commit(parentId, parentId2, message, blobs, timestamp);
-//        return newCommit;
-//    }
+    public void checkoutCommand(String[] args) throws IOException {
+        Commit currCommit;
+        HashMap currBlobs;
 
+        if (args.length == 3) {
+            // `checkout -- [fileName]` command
+
+            String fileName = args[2];
+            File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
+            currCommit = readObject(currCommitFile, Commit.class);
+            currBlobs = currCommit.getBlobs();
+            byte[] headFileContents = null;
+
+            if (currBlobs.containsKey(fileName)) {
+                Object headFileId = currBlobs.get(fileName);
+                File headFile = Utils.join(BLOB_DIR, (String) headFileId);
+                Blob headFileObject = readObject(headFile, Blob.class);
+                headFileContents= headFileObject.getFileContents();
+            } else {
+                Utils.message("File does not exist in that commit.");
+                return;
+            }
+
+            if (plainFilenamesIn(CWD).contains(fileName) && headFileContents != null) {
+                File originalFile = Utils.join(CWD, fileName);
+                Utils.writeContents(originalFile, headFileContents);
+            } else {
+                File newFile = Utils.join(CWD, fileName);
+                newFile.createNewFile();
+                Utils.writeContents(newFile, headFileContents);
+            }
+        } else if (args.length == 4) {
+            // TODO: handle the `checkout [commit id] -- [fileName]` command
+
+            String commitId = args[1];
+            String fileName = args[3];
+            Blob currFileObject = null;
+            byte[] currFileContents = null;
+
+            if (commitHistory.containsKey(commitId)) {
+                File currCommitFile = Utils.join(COMMIT_DIR, commitId);
+                currCommit = readObject(currCommitFile, Commit.class);
+                currBlobs = currCommit.getBlobs();
+
+                if (currBlobs.containsKey(fileName)) {
+                    Object currFileId = currBlobs.get(fileName);
+                    File currFile = Utils.join(BLOB_DIR, (String) currFileId);
+                    currFileObject = readObject(currFile, Blob.class);
+                    currFileContents = currFileObject.getFileContents();
+                } else {
+                    Utils.message("File does not exist in that commit.");
+                    return;
+                }
+
+                if (plainFilenamesIn(CWD).contains(fileName) && currFileContents != null) {
+                    File originalFile = Utils.join(CWD, fileName);
+                    Utils.writeContents(originalFile, currFileContents);
+                } else {
+                    File newFile = Utils.join(CWD, fileName);
+                    newFile.createNewFile();
+                    Utils.writeContents(newFile, currFileContents);
+                }
+            } else {
+                Utils.message("No commit with that id exists.");
+            }
+        } else if (args.length == 2) {
+            // TODO: handle the `checkout [branchName]` command
+
+            String branchName = args[1];
+        }
+    }
 
     /**
      * saves commit into a file in the .gitlet/commits directory. adds reference to
