@@ -311,11 +311,10 @@ public class Repository implements Serializable {
                 return;
             }
 
-            String branchHeadId = branches.get(branchName);
-            File branchHeadCommitFile = Utils.join(COMMIT_DIR, branchHeadId);
-            Commit branchHeadCommit = readObject(branchHeadCommitFile, Commit.class);
-            HashMap branchHeadBlobs = branchHeadCommit.getBlobs();
-            Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
+            if (Objects.equals(activeBranch, branchName)) {
+                Utils.message("No need to checkout the current branch.");
+                return;
+            }
 
             File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
             currCommit = readObject(currCommitFile, Commit.class);
@@ -337,11 +336,11 @@ public class Repository implements Serializable {
                 return;
             }
 
-
-            if (Objects.equals(activeBranch, branchName)) {
-                Utils.message("No need to checkout the current branch.");
-                return;
-            }
+            String branchHeadId = branches.get(branchName);
+            File branchHeadCommitFile = Utils.join(COMMIT_DIR, branchHeadId);
+            Commit branchHeadCommit = readObject(branchHeadCommitFile, Commit.class);
+            HashMap branchHeadBlobs = branchHeadCommit.getBlobs();
+            Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
 
             for (String key: branchHeadBlobKeys) {
                 Object fileId = branchHeadBlobs.get(key);
@@ -354,8 +353,8 @@ public class Repository implements Serializable {
 
             for (Object key: currBlobKeys) {
                 if (!branchHeadBlobs.containsKey(key)) {
-//                    File toDelete = Utils.join(CWD, (String) key);
-                    Utils.restrictedDelete((String) key);
+                    File toDelete = Utils.join(CWD, (String) key);
+                    Utils.restrictedDelete(toDelete);
                 }
             }
 
