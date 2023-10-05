@@ -306,6 +306,11 @@ public class Repository implements Serializable {
             // TODO: handle the `checkout [branchName]` command
             String branchName = args[1];
 
+            if (!branches.containsKey(branchName)) {
+                Utils.message("No such branch exists.");
+                return;
+            }
+
             String branchHeadId = branches.get(branchName);
             File branchHeadCommitFile = Utils.join(COMMIT_DIR, branchHeadId);
             Commit branchHeadCommit = readObject(branchHeadCommitFile, Commit.class);
@@ -332,10 +337,6 @@ public class Repository implements Serializable {
                 return;
             }
 
-            if (!branches.containsKey(branchName)) {
-                Utils.message("No such branch exists.");
-                return;
-            }
 
             if (Objects.equals(activeBranch, branchName)) {
                 Utils.message("No need to checkout the current branch.");
