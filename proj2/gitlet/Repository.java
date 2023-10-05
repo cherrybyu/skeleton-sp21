@@ -17,12 +17,10 @@ import static gitlet.Utils.*;
  *  @author TODO
  */
 public class Repository implements Serializable {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Repository class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
+    /*TODO: add instance variables here.
+      List all instance variables of the Repository class here with a useful
+      comment above them describing what that variable represents and how that
+      variable is used. We've provided two examples for you.
      */
 
     /** The current working directory. */
@@ -243,6 +241,10 @@ public class Repository implements Serializable {
 
         if (args.length == 3) {
             // `checkout -- [fileName]` command
+            if (!Objects.equals(args[1], "--")) {
+                Utils.message("Incorrect operands.");
+                return;
+            }
 
             String fileName = args[2];
             File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
@@ -270,7 +272,10 @@ public class Repository implements Serializable {
             }
         } else if (args.length == 4) {
             // TODO: handle the `checkout [commit id] -- [fileName]` command
-
+            if (!Objects.equals(args[2], "--")) {
+                Utils.message("Incorrect operands.");
+                return;
+            }
             String commitId = args[1];
             String fileName = args[3];
             Blob currFileObject = null;
@@ -339,25 +344,29 @@ public class Repository implements Serializable {
             String branchHeadId = branches.get(branchName);
             File branchHeadCommitFile = Utils.join(COMMIT_DIR, branchHeadId);
             Commit branchHeadCommit = readObject(branchHeadCommitFile, Commit.class);
+
             HashMap branchHeadBlobs = branchHeadCommit.getBlobs();
-            Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
+            Set branchHeadBlobKeys = branchHeadBlobs.keySet();
 
-            for (String key: branchHeadBlobKeys) {
-                Object fileId = branchHeadBlobs.get(key);
-                File currFile = Utils.join(BLOB_DIR, (String) fileId);
-                Blob currFileObject = readObject(currFile, Blob.class);
-                byte[] currFileContents = currFileObject.getFileContents();
-                File newFile = Utils.join(CWD, key);
-                Utils.writeContents(newFile, currFileContents);
-            }
-
-            for (Object key: currBlobKeys) {
-                if (!branchHeadBlobs.containsKey(key)) {
-                    File toDelete = Utils.join(CWD, (String) key);
+            for (Object fileName: currBlobKeys) {
+                if (!branchHeadBlobs.containsKey(fileName)) {
+                    File toDelete = Utils.join(CWD, (String) fileName);
                     Utils.restrictedDelete(toDelete);
                 }
             }
 
+            for (Object fileName: branchHeadBlobKeys) {
+                Object fileId = branchHeadBlobs.get(fileName);
+
+                File currFile = Utils.join(BLOB_DIR, (String) fileId);
+                Blob currFileObject = readObject(currFile, Blob.class);
+
+                byte[] currFileContents = currFileObject.getFileContents();
+                File newFile = Utils.join(CWD, (String) fileName);
+                Utils.writeContents(newFile, currFileContents);
+            }
+
+            stagingArea.clear();
             activeBranch = branchName;
             headCommit = branchHeadId;
         }
@@ -374,6 +383,7 @@ public class Repository implements Serializable {
         if (!branches.containsKey(branchName)) {
             Utils.message("A branch with that name does not exist.");
         }
+
         if (Objects.equals(activeBranch, branchName)) {
             Utils.message("Cannot remove the current branch.");
         } else {
