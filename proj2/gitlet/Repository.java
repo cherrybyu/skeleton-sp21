@@ -309,8 +309,28 @@ public class Repository implements Serializable {
         }
     }
 
+    public void branchCommand(String branchName) {
+        if (branches.containsKey(branchName)) {
+            Utils.message("A branch with that name already exists.");
+        }
+        branches.put(branchName, headCommit);
+    }
+
+    public void rmBranchCommand(String branchName) {
+        if (branches.containsKey(branchName)) {
+            Utils.message("A branch with that name already exists.");
+        }
+        if (Objects.equals(activeBranch, branchName)) {
+            Utils.message("Cannot remove the current branch.");
+        } else {
+            branches.remove(branchName);
+        }
+    }
+
+
     /**
-     * saves commit into a file in the .gitlet/commits directory. adds reference to
+     /**
+    * saves commit into a file in the .gitlet/commits directory. adds reference to
      * said commit to commitHistory and assigns headCommit to the commit's id
      * */
     private void saveCommit(Commit commit) throws IOException {

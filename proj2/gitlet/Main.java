@@ -90,12 +90,18 @@ public class Main {
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "branch":
-                    // TODO: handle the `branch [branchName]` command
+                    // `branch [branchName]` command
                     branchName = args[1];
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.branchCommand(branchName);
+                    Utils.writeObject(repository, currRepo);
                     break;
                 case "rm-branch":
                     // TODO: handle the `rm-branch [branchName]` command
                     branchName = args[1];
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.rmBranchCommand(branchName);
+                    Utils.writeObject(repository, currRepo);
                     break;
                 case "reset":
                     // TODO: handle the `reset [commitId]` command
