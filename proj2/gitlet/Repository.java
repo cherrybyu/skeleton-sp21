@@ -382,13 +382,15 @@ public class Repository implements Serializable {
     public void rmBranchCommand(String branchName) {
         if (!branches.containsKey(branchName)) {
             Utils.message("A branch with that name does not exist.");
+            return;
         }
 
         if (Objects.equals(activeBranch, branchName)) {
             Utils.message("Cannot remove the current branch.");
-        } else {
-            branches.remove(branchName);
+            return;
         }
+
+        branches.remove(branchName);
     }
 
 
