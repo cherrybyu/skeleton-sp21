@@ -304,8 +304,62 @@ public class Repository implements Serializable {
             }
         } else if (args.length == 2) {
             // TODO: handle the `checkout [branchName]` command
-
             String branchName = args[1];
+
+            String branchHeadId = branches.get(branchName);
+            File branchHeadCommitFile = Utils.join(COMMIT_DIR, branchHeadId);
+            Commit branchHeadCommit = readObject(branchHeadCommitFile, Commit.class);
+            HashMap branchHeadBlobs = branchHeadCommit.getBlobs();
+            Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
+
+            File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
+            currCommit = readObject(currCommitFile, Commit.class);
+            currBlobs = currCommit.getBlobs();
+            Set currBlobKeys = currBlobs.keySet();
+
+            List <String> workingFiles = plainFilenamesIn(CWD);
+            if (workingFiles != null) {
+                for (String file: workingFiles) {
+                    if (!currBlobs.containsKey(file)) {
+                        Utils.message("There is an untracked file in the way; delete it, or add and commit it first.");
+                        return;
+                    }
+                }
+            }
+
+            if (!stagingArea.isEmpty()) {
+                Utils.message("There is an untracked file in the way; delete it, or add and commit it first.");
+                return;
+            }
+
+            if (!branches.containsKey(branchName)) {
+                Utils.message("No such branch exists.");
+                return;
+            }
+
+            if (Objects.equals(activeBranch, branchName)) {
+                Utils.message("No need to checkout the current branch.");
+                return;
+            }
+
+            for (String key: branchHeadBlobKeys) {
+                Object fileId = branchHeadBlobs.get(key);
+                File currFile = Utils.join(BLOB_DIR, (String) fileId);
+                Blob currFileObject = readObject(currFile, Blob.class);
+                byte[] currFileContents = currFileObject.getFileContents();
+                File newFile = Utils.join(CWD, key);
+                Utils.writeContents(newFile, currFileContents);
+            }
+
+            for (Object key: currBlobKeys) {
+                if (!branchHeadBlobs.containsKey(key)) {
+//                    File toDelete = Utils.join(CWD, (String) key);
+                    Utils.restrictedDelete((String) key);
+                }
+            }
+
+            activeBranch = branchName;
+            headCommit = branchHeadId;
         }
     }
 
@@ -317,8 +371,8 @@ public class Repository implements Serializable {
     }
 
     public void rmBranchCommand(String branchName) {
-        if (branches.containsKey(branchName)) {
-            Utils.message("A branch with that name already exists.");
+        if (!branches.containsKey(branchName)) {
+            Utils.message("A branch with that name does not exist.");
         }
         if (Objects.equals(activeBranch, branchName)) {
             Utils.message("Cannot remove the current branch.");
