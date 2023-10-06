@@ -361,6 +361,7 @@ public class Repository implements Serializable {
 
                 byte[] currFileContents = currFileObject.getFileContents();
                 File newFile = Utils.join(CWD, (String) fileName);
+                Utils.message((String) fileName);
                 newFile.createNewFile();
                 Utils.writeContents(newFile, currFileContents);
             }
@@ -391,10 +392,10 @@ public class Repository implements Serializable {
         }
 
         branches.remove(branchName);
-        Set<String> branchKeys = branches.keySet();
-        for (String branch: branchKeys) {
-            System.out.println(branch);
-        }
+//        Set<String> branchKeys = branches.keySet();
+//        for (String branch: branchKeys) {
+//            System.out.println(branch);
+//        }
     }
 
 
