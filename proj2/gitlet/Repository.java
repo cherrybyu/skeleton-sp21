@@ -296,14 +296,9 @@ public class Repository implements Serializable {
                     return;
                 }
 
-                if (plainFilenamesIn(CWD).contains(fileName) && currFileContents != null) {
-                    File originalFile = Utils.join(CWD, fileName);
-                    Utils.writeContents(originalFile, currFileContents);
-                } else {
-                    File newFile = Utils.join(CWD, fileName);
-                    newFile.createNewFile();
-                    Utils.writeContents(newFile, currFileContents);
-                }
+                File originalFile = Utils.join(CWD, fileName);
+                originalFile.createNewFile();
+                Utils.writeContents(originalFile, currFileContents);
             } else {
                 Utils.message("No commit with that id exists.");
             }
@@ -329,8 +324,11 @@ public class Repository implements Serializable {
             List <String> workingFiles = plainFilenamesIn(CWD);
             if (workingFiles != null) {
                 for (String file: workingFiles) {
-                    if (!currBlobs.containsKey(file)) {
+                    if (!currBlobKeys.contains(file)) {
                         Utils.message("There is an untracked file in the way; delete it, or add and commit it first.");
+                        Utils.message(currBlobKeys.toString());
+                        Utils.message(workingFiles.toString());
+
                         return;
                     }
                 }
@@ -363,6 +361,7 @@ public class Repository implements Serializable {
 
                 byte[] currFileContents = currFileObject.getFileContents();
                 File newFile = Utils.join(CWD, (String) fileName);
+                newFile.createNewFile();
                 Utils.writeContents(newFile, currFileContents);
             }
 
@@ -375,6 +374,7 @@ public class Repository implements Serializable {
     public void branchCommand(String branchName) {
         if (branches.containsKey(branchName)) {
             Utils.message("A branch with that name already exists.");
+            return;
         }
         branches.put(branchName, headCommit);
     }
@@ -391,6 +391,10 @@ public class Repository implements Serializable {
         }
 
         branches.remove(branchName);
+        Set<String> branchKeys = branches.keySet();
+        for (String branch: branchKeys) {
+            System.out.println(branch);
+        }
     }
 
 
