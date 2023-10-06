@@ -89,7 +89,7 @@ public class Repository implements Serializable {
 
             File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
             Commit currCommit = readObject(currCommitFile, Commit.class);
-            HashMap currBlobs = currCommit.getBlobs();
+            HashMap<String, String> currBlobs = currCommit.getBlobs();
 
             if (!plainFilenamesIn(BLOB_DIR).contains(blobId) && currBlobs.get(fileName) != blobId) {
                 stagingArea.put(fileName, blobId);
@@ -114,7 +114,22 @@ public class Repository implements Serializable {
             return;
         }
 
-        HashMap<String, String> blobs = new HashMap<>(stagingArea);
+        File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
+        Commit currCommit = readObject(currCommitFile, Commit.class);
+        HashMap<String, String> blobs = currCommit.getBlobs();
+
+        Set<String> stagingKeys = stagingArea.keySet();
+        for (String fileName: stagingKeys) {
+            String value;
+            if (blobs.containsKey(fileName)) {
+                value = stagingArea.get(fileName);
+                blobs.replace(fileName, value);
+            } else {
+                value = stagingArea.get(fileName);
+                blobs.put(fileName,value);
+            }
+        }
+
         stagingArea.clear();
 
         Date timeStamp = Date.from(Instant.now());
@@ -130,7 +145,7 @@ public class Repository implements Serializable {
             } else {
                 File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
                 Commit currCommit = readObject(currCommitFile, Commit.class);
-                HashMap currBlobs = currCommit.getBlobs();
+                HashMap<String, String> currBlobs = currCommit.getBlobs();
 
                 if (currBlobs.containsKey(fileName)) {
                     if (plainFilenamesIn(CWD).contains(fileName)) {
@@ -237,7 +252,7 @@ public class Repository implements Serializable {
 
     public void checkoutCommand(String[] args) throws IOException {
         Commit currCommit;
-        HashMap currBlobs;
+        HashMap<String, String> currBlobs;
 
         if (args.length == 3) {
             // `checkout -- [fileName]` command
@@ -253,10 +268,10 @@ public class Repository implements Serializable {
             byte[] headFileContents = null;
 
             if (currBlobs.containsKey(fileName)) {
-                Object headFileId = currBlobs.get(fileName);
-                File headFile = Utils.join(BLOB_DIR, (String) headFileId);
+                String headFileId = currBlobs.get(fileName);
+                File headFile = Utils.join(BLOB_DIR, headFileId);
                 Blob headFileObject = readObject(headFile, Blob.class);
-                headFileContents= headFileObject.getFileContents();
+                headFileContents = headFileObject.getFileContents();
             } else {
                 Utils.message("File does not exist in that commit.");
                 return;
@@ -287,8 +302,8 @@ public class Repository implements Serializable {
                 currBlobs = currCommit.getBlobs();
 
                 if (currBlobs.containsKey(fileName)) {
-                    Object currFileId = currBlobs.get(fileName);
-                    File currFile = Utils.join(BLOB_DIR, (String) currFileId);
+                    String currFileId = currBlobs.get(fileName);
+                    File currFile = Utils.join(BLOB_DIR, currFileId);
                     currFileObject = readObject(currFile, Blob.class);
                     currFileContents = currFileObject.getFileContents();
                 } else {
@@ -319,10 +334,10 @@ public class Repository implements Serializable {
             File currCommitFile = Utils.join(COMMIT_DIR, headCommit);
             currCommit = readObject(currCommitFile, Commit.class);
             currBlobs = currCommit.getBlobs();
-            Set currBlobKeys = currBlobs.keySet();
+            Set<String> currBlobKeys = currBlobs.keySet();
 
             List <String> workingFiles = plainFilenamesIn(CWD);
-            if (workingFiles != null) {
+            if (workingFiles != null && !workingFiles.isEmpty()) {
                 for (String file: workingFiles) {
                     if (!currBlobKeys.contains(file)) {
                         Utils.message("There is an untracked file in the way; delete it, or add and commit it first.");
@@ -343,25 +358,25 @@ public class Repository implements Serializable {
             File branchHeadCommitFile = Utils.join(COMMIT_DIR, branchHeadId);
             Commit branchHeadCommit = readObject(branchHeadCommitFile, Commit.class);
 
-            HashMap branchHeadBlobs = branchHeadCommit.getBlobs();
-            Set branchHeadBlobKeys = branchHeadBlobs.keySet();
+            HashMap<String, String> branchHeadBlobs = branchHeadCommit.getBlobs();
+            Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
 
             for (Object fileName: currBlobKeys) {
-                if (!branchHeadBlobs.containsKey(fileName)) {
+                if (!branchHeadBlobKeys.contains(fileName)) {
                     File toDelete = Utils.join(CWD, (String) fileName);
+                    toDelete.createNewFile();
                     Utils.restrictedDelete(toDelete);
                 }
             }
 
-            for (Object fileName: branchHeadBlobKeys) {
-                Object fileId = branchHeadBlobs.get(fileName);
+            for (String fileName: branchHeadBlobKeys) {
+                String fileId = branchHeadBlobs.get(fileName);
 
-                File currFile = Utils.join(BLOB_DIR, (String) fileId);
+                File currFile = Utils.join(BLOB_DIR, fileId);
                 Blob currFileObject = readObject(currFile, Blob.class);
 
                 byte[] currFileContents = currFileObject.getFileContents();
-                File newFile = Utils.join(CWD, (String) fileName);
-                Utils.message((String) fileName);
+                File newFile = Utils.join(CWD, fileName);
                 newFile.createNewFile();
                 Utils.writeContents(newFile, currFileContents);
             }
@@ -418,6 +433,7 @@ public class Repository implements Serializable {
         commitHistory.put(commitId, commitData);
         headCommit = commitId;
         removalArea.clear();
+        branches.replace(activeBranch, headCommit);
     }
 }
 

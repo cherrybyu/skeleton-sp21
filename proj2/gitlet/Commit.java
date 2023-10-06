@@ -26,11 +26,11 @@ public class Commit implements Serializable {
     private String parentId2;
     private String timestamp;
     private String message;
-    private HashMap blobs;
+    private HashMap<String, String> blobs;
 
 
     /* TODO: fill in the rest of this class. */
-    public Commit(String parentId, String parentId2, String message, HashMap blobs, String timestamp) {
+    public Commit(String parentId, String parentId2, String message, HashMap<String, String> blobs, String timestamp) {
         this.parentId = parentId;
         this.parentId2 = parentId2;
         this.message = message;
@@ -54,7 +54,7 @@ public class Commit implements Serializable {
         return message;
     }
 
-    public HashMap getBlobs() {
+    public HashMap<String, String> getBlobs() {
         return blobs;
     }
 }
