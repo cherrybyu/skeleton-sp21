@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 import static gitlet.Utils.join;
 
@@ -31,9 +32,20 @@ public class Main {
             String branchName;
             String commitId;
             Repository currRepo;
+
+            if (!Objects.equals(firstArg, "init") && !GITLET_DIR.exists()) {
+                Utils.message("Not in an initialized Gitlet directory.");
+                return;
+            }
+
             switch(firstArg) {
                 case "init":
                     // `init` command
+                    if (args.length > 1) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     Repository newRepo = new Repository();
                     newRepo.initCommand();
                     repository.createNewFile();
@@ -41,6 +53,11 @@ public class Main {
                     break;
                 case "add":
                     // `add [filename]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     fileName = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.addCommand(fileName);
@@ -48,6 +65,11 @@ public class Main {
                     break;
                 case "commit":
                     // `commit [log message]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     message = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.commitCommand(message);
@@ -55,6 +77,11 @@ public class Main {
                     break;
                 case "rm":
                     // `rm [fileName]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     fileName = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.rmCommand(fileName);
@@ -62,18 +89,33 @@ public class Main {
                     break;
                 case "log":
                     // `log` command
+                    if (args.length > 1) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.logCommand();
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "global-log":
                     // `global-log` command
+                    if (args.length > 1) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.globalLogCommand();
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "find":
                     // `find [commit message]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     message = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.findCommand(message);
@@ -81,24 +123,44 @@ public class Main {
                     break;
                 case "status":
                     // `status` command
+                    if (args.length > 1) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.statusCommand();
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "checkout":
+                    if (args.length > 4) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.checkoutCommand(args);
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "branch":
                     // `branch [branchName]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     branchName = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.branchCommand(branchName);
                     Utils.writeObject(repository, currRepo);
                     break;
                 case "rm-branch":
-                    // TODO: handle the `rm-branch [branchName]` command
+                    // `rm-branch [branchName]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     branchName = args[1];
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.rmBranchCommand(branchName);
@@ -106,14 +168,31 @@ public class Main {
                     break;
                 case "reset":
                     // TODO: handle the `reset [commitId]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     commitId = args[1];
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.resetCommand(commitId);
+                    Utils.writeObject(repository, currRepo);
                     break;
                 case "merge":
                     // TODO: handle the `merge [branchName]` command
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+
                     branchName = args[1];
                     break;
                 case "":
                     Utils.message("Please enter a command.");
+                    break;
+                default:
+                    Utils.message("No command with that name exists.");
+                    break;
             }
         } catch (IOException e) {
             // Handle the exception here (e.g., print an error message)

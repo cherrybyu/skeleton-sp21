@@ -1,22 +1,15 @@
 package gitlet;
 
-// TODO: any imports you need here
-//import static gitlet.Utils.*;
-
 import java.io.Serializable;
-//import java.time.Instant;
-import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.HashMap;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class does at a high level.
  *
- *  @author TODO
+ *  @author Hannah Nguyen
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
-     *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
@@ -28,8 +21,6 @@ public class Commit implements Serializable {
     private String message;
     private HashMap<String, String> blobs;
 
-
-    /* TODO: fill in the rest of this class. */
     public Commit(String parentId, String parentId2, String message, HashMap<String, String> blobs, String timestamp) {
         this.parentId = parentId;
         this.parentId2 = parentId2;
@@ -42,7 +33,7 @@ public class Commit implements Serializable {
         return parentId;
     }
 
-    public String getParentId2 () {
+    public String getParentId2() {
         return parentId2;
     }
 
