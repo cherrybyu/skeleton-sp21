@@ -400,11 +400,6 @@ public class Repository implements Serializable {
         Commit commit = Helpers.getCommit(COMMIT_DIR, commitId);
         HashMap<String, String> blobs = commit.getBlobs();
         Set <String> blobKeys = blobs.keySet();
-
-        Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
-        HashMap<String, String> currBlobs = currCommit.getBlobs();
-        Set <String> currBlobKeys = currBlobs.keySet();
-
         List<String> workingFiles = plainFilenamesIn(CWD);
 
         if (workingFiles != null) {
@@ -421,20 +416,23 @@ public class Repository implements Serializable {
             }
         }
 
-//        if (!stagingArea.isEmpty()) {
-//            Utils.message("There is an untracked file in the way; delete it, or add and commit it first.");
-//            return;
-//        }
-
         for (String fileName: blobKeys) {
             String[] args = new String[]{"checkout", commitId, "--", fileName};
             this.checkoutCommand(args);
         }
 
+        if (workingFiles != null) {
+            for (String file: workingFiles) {
+                if (!blobKeys.contains(file)) {
+                    File toDelete = Utils.join(CWD, file);
+                    restrictedDelete(toDelete);
+                }
+            }
+        }
+
         stagingArea.clear();
         headCommit = commitId;
-        //checks out all files tracked by given commit
-        // removes tracked files that are not present in said commit
+        branches.replace(activeBranch, commitId);
     }
 
 
