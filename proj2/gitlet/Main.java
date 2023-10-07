@@ -7,7 +7,7 @@ import java.util.Objects;
 import static gitlet.Utils.join;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author Hannah Nguyen
  */
 public class Main {
     /** The current working directory. */
@@ -20,7 +20,6 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
         if (args.length == 0) {
             Utils.message("Please enter a command.");
             return;
@@ -186,6 +185,9 @@ public class Main {
                     }
 
                     branchName = args[1];
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.mergeCommand(branchName);
+                    Utils.writeObject(repository, currRepo);
                     break;
                 case "":
                     Utils.message("Please enter a command.");
@@ -200,3 +202,4 @@ public class Main {
         }
     }
 }
+

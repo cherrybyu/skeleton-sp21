@@ -6,7 +6,7 @@ import java.io.Serializable;
 //import java.util.HashMap;
 //import java.util.TreeMap;
 public class Blob implements Serializable {
-    public String fileName;
+    private String fileName;
     private byte[] fileContents;
 
     public Blob(String fileName, byte[] fileContents) {
@@ -16,5 +16,9 @@ public class Blob implements Serializable {
 
     public byte[] getFileContents() {
         return fileContents;
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 }

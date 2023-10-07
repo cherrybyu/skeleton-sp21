@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class does at a high level.
  *
  *  @author Hannah Nguyen
  */
@@ -21,7 +20,12 @@ public class Commit implements Serializable {
     private String message;
     private HashMap<String, String> blobs;
 
-    public Commit(String parentId, String parentId2, String message, HashMap<String, String> blobs, String timestamp) {
+    public Commit(
+            String parentId,
+            String parentId2,
+            String message,
+            HashMap<String, String> blobs,
+            String timestamp) {
         this.parentId = parentId;
         this.parentId2 = parentId2;
         this.message = message;
@@ -44,7 +48,7 @@ public class Commit implements Serializable {
     public String getMessage() {
         return message;
     }
-
+    /** returns file names mapped to their sha1 hash */
     public HashMap<String, String> getBlobs() {
         return blobs;
     }
