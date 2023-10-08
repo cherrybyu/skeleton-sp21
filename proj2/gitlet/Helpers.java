@@ -2,13 +2,22 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+
+
 import static gitlet.Utils.*;
 
 public class Helpers {
     /** Takes an object and serializes it. Once serialized, creates a
      * SHA-1 hash. Returns a FileData instance that contains both the SHA-1
      * hash and the serialized object. */
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+
     public static FileData getObjectAndId(Object object) {
         byte[] serializedObject = serialize((Serializable) object);
         String objectId = Utils.sha1(serializedObject);
@@ -64,5 +73,79 @@ public class Helpers {
         File originalFile = Utils.join(cwd, fileName);
         Utils.writeContents(originalFile, fileContents);
     }
+
+    public static HashMap<String, byte[]> getFilesFromCommit(Commit commit, File blobDir) {
+        HashMap<String, String> blobs = commit.getBlobs();
+        Set<String> blobKeys = blobs.keySet();
+
+        HashMap<String, byte[]> fileContents = new HashMap<>();
+        for (String fileName: blobKeys) {
+            String id = blobs.get(fileName);
+            Blob blob = Helpers.getBlob(blobDir, id);
+            fileContents.put(fileName, blob.getFileContents());
+        }
+
+        return fileContents;
+    }
+
+    public static HashMap<String, byte[]> setUpFileList(
+            HashMap<String, byte[]> activeHeadFiles,
+            HashMap<String, byte[]> branchHeadFiles,
+            HashMap<String, byte[]> splitPointFiles,
+            List<String> workingFiles) {
+
+        HashMap <String, byte[]> fileList = new HashMap<>();
+
+        for (String fileName: activeHeadFiles.keySet()) {
+            if (!fileList.containsKey(fileName)) {
+                fileList.put(fileName, null);
+            }
+        }
+
+        for (String fileName: branchHeadFiles.keySet()) {
+            if (!fileList.containsKey(fileName)) {
+                fileList.put(fileName, null);
+            }
+        }
+
+        for (String fileName: splitPointFiles.keySet()) {
+            if (!fileList.containsKey(fileName)) {
+                fileList.put(fileName, null);
+            }
+        }
+
+        for (String fileName: workingFiles) {
+            if (!fileList.containsKey(fileName)) {
+                fileList.put(fileName, null);
+            }
+        }
+
+        return fileList;
+    }
+
+    public static void overwriteConflictedFile(
+            File file,
+            byte[] activeFileContents,
+            byte[] branchFileContents) {
+        Utils.writeContents(
+                file,
+                "<<<<<<< HEAD \n"
+                        + activeFileContents
+                        + "======= \n"
+                        + branchFileContents
+                        + ">>>>>>>");
+    }
+
+    public static Commit createCommit(
+            String parentId,
+            String parentId2,
+            String message,
+            HashMap<String, String> blobs) {
+
+        Date timeStamp = Date.from(Instant.now());
+        String formattedDate = sdf.format(timeStamp);
+        return new Commit(parentId, parentId2, message, blobs, formattedDate);
+    }
+
 }
 
