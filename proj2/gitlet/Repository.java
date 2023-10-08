@@ -1,7 +1,5 @@
 package gitlet;
 
-import jdk.jshell.execution.Util;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -423,7 +421,9 @@ public class Repository implements Serializable {
 
         assert workingFiles != null;
         for (String fileName: workingFiles) {
-            if (!activeHeadBlobs.containsKey(fileName)) {
+            Blob blob = Helpers.fileToBlob(CWD, fileName);
+            FileData blobData = Helpers.getObjectAndId(blob);
+            if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
                 Utils.message(
                         "There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
@@ -540,7 +540,6 @@ public class Repository implements Serializable {
 
         if (mergeConflictEncountered) { Utils.message("Encountered a merge conflict."); }
     }
-
 
     private void mergeCommit(String message, String parentId2) {
         if (stagingArea.isEmpty() && removalArea.isEmpty()) {
