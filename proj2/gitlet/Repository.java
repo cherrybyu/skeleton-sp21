@@ -122,7 +122,14 @@ public class Repository implements Serializable {
             }
         }
 
+        for (String fileName: removalArea) {
+            if (blobs.containsKey(fileName)) {
+                blobs.remove(fileName);
+            }
+        }
+
         stagingArea.clear();
+        removalArea.clear();
 
         Date timeStamp = Date.from(Instant.now());
         String formattedDate = sdf.format(timeStamp);
@@ -420,7 +427,6 @@ public class Repository implements Serializable {
         CommitData commitData = new CommitData(commit.getParentId(), commit.getTimestamp(), commit.getMessage());
         commitHistory.put(commitId, commitData);
         headCommit = commitId;
-        removalArea.clear();
         branches.replace(activeBranch, headCommit);
     }
 }
