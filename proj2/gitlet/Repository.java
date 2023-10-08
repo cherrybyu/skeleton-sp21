@@ -74,11 +74,8 @@ public class Repository implements Serializable {
                 return;
             }
 
-            Blob newBlob = Helpers.fileToBlob(CWD,fileName);
-            FileData fileData = Helpers.getObjectAndId(newBlob);
-
-            String blobId = fileData.id;
-            byte[] serializedBlob = fileData.serialized;
+            Blob newBlob = Helpers.fileToBlob(CWD, fileName);
+            FileData newBlobData = Helpers.getObjectAndId(newBlob);
 
             Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
             HashMap<String, String> currBlobs = currCommit.getBlobs();
@@ -86,12 +83,11 @@ public class Repository implements Serializable {
             List<String> blobFileNames = plainFilenamesIn(BLOB_DIR);
 
             if (blobFileNames != null
-                    && !blobFileNames.contains(blobId)
-                    && !Objects.equals(currFileId, blobId))
-            {
-                stagingArea.put(fileName, blobId);
-                File blobFile = Utils.join(BLOB_DIR, blobId);
-                writeContents(blobFile, serializedBlob);
+                    && !blobFileNames.contains(newBlobData.id)
+                    && !Objects.equals(currFileId, newBlobData.id)) {
+                stagingArea.put(fileName, newBlobData.id);
+                File blobFile = Utils.join(BLOB_DIR, newBlobData.id);
+                writeContents(blobFile, newBlobData.serialized);
             }
 
         } catch (IllegalArgumentException e) {
@@ -122,7 +118,7 @@ public class Repository implements Serializable {
                 blobs.replace(fileName, value);
             } else {
                 value = stagingArea.get(fileName);
-                blobs.put(fileName,value);
+                blobs.put(fileName, value);
             }
         }
 
@@ -154,7 +150,7 @@ public class Repository implements Serializable {
                     throw new IllegalArgumentException("No reason to remove the file.");
                 }
             }
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             Utils.message(e.getMessage());
         }
     }
@@ -250,19 +246,14 @@ public class Repository implements Serializable {
     }
 
     public void checkoutCommand(String[] args) throws IOException {
-        Commit currCommit;
-        HashMap<String, String> currBlobs;
-
-        if (args.length == 3) {
-            // `checkout -- [fileName]` command
+        if (args.length == 3) { // `checkout -- [fileName]` command
             if (!Objects.equals(args[1], "--")) {
                 Utils.message("Incorrect operands.");
                 return;
             }
-
             String fileName = args[2];
-            currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
-            currBlobs = currCommit.getBlobs();
+            Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+            HashMap<String, String> currBlobs = currCommit.getBlobs();
 
             if (currBlobs.containsKey(fileName)) {
                 String fileId = currBlobs.get(fileName);
@@ -270,19 +261,17 @@ public class Repository implements Serializable {
             } else {
                 Utils.message("File does not exist in that commit.");
             }
-        } else if (args.length == 4) {
-            // `checkout [commit id] -- [fileName]` command
+        } else if (args.length == 4) { // `checkout [commit id] -- [fileName]` command
             if (!Objects.equals(args[2], "--")) {
                 Utils.message("Incorrect operands.");
                 return;
             }
-
             String commitId = args[1];
             String fileName = args[3];
 
             if (commitHistory.containsKey(commitId)) {
-                currCommit = Helpers.getCommit(COMMIT_DIR, commitId);
-                currBlobs = currCommit.getBlobs();
+                Commit currCommit = Helpers.getCommit(COMMIT_DIR, commitId);
+                HashMap<String, String> currBlobs = currCommit.getBlobs();
 
                 if (currBlobs.containsKey(fileName)) {
                     String currFileId = currBlobs.get(fileName);
@@ -293,25 +282,22 @@ public class Repository implements Serializable {
             } else {
                 Utils.message("No commit with that id exists.");
             }
-        } else if (args.length == 2) {
-            // `checkout [branchName]` command
+        } else if (args.length == 2) { // `checkout [branchName]` command
             String branchName = args[1];
-
             if (!branches.containsKey(branchName)) {
                 Utils.message("No such branch exists.");
                 return;
             }
-
             if (Objects.equals(activeBranch, branchName)) {
                 Utils.message("No need to checkout the current branch.");
                 return;
             }
 
-            currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
-            currBlobs = currCommit.getBlobs();
+            Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+            HashMap<String, String> currBlobs = currCommit.getBlobs();
             Set<String> currBlobKeys = currBlobs.keySet();
+            List<String> workingFiles = plainFilenamesIn(CWD);
 
-            List <String> workingFiles = plainFilenamesIn(CWD);
             if (workingFiles != null && !workingFiles.isEmpty()) {
                 for (String file: workingFiles) {
                     if (!currBlobKeys.contains(file)) {
@@ -320,7 +306,6 @@ public class Repository implements Serializable {
                     }
                 }
             }
-
             if (!stagingArea.isEmpty()) {
                 Utils.message("There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
@@ -328,17 +313,14 @@ public class Repository implements Serializable {
 
             String branchHeadId = branches.get(branchName);
             Commit branchHeadCommit = Helpers.getCommit(COMMIT_DIR, branchHeadId);
-
             HashMap<String, String> branchHeadBlobs = branchHeadCommit.getBlobs();
             Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
 
-            for (Object fileName: currBlobKeys) {
+            for (String fileName: currBlobKeys) {
                 if (!branchHeadBlobKeys.contains(fileName)) {
-                    File toDelete = Utils.join(CWD, (String) fileName);
-                    Utils.restrictedDelete(toDelete);
+                    Utils.restrictedDelete(Utils.join(CWD, fileName));
                 }
             }
-
             for (String fileName: branchHeadBlobKeys) {
                 String[] newArgs = new String[] {"checkout", branchHeadId, "--", fileName};
                 this.checkoutCommand(newArgs);
@@ -381,7 +363,7 @@ public class Repository implements Serializable {
 
         Commit commit = Helpers.getCommit(COMMIT_DIR, commitId);
         HashMap<String, String> blobs = commit.getBlobs();
-        Set <String> blobKeys = blobs.keySet();
+        Set<String> blobKeys = blobs.keySet();
         List<String> workingFiles = plainFilenamesIn(CWD);
 
         if (workingFiles != null) {

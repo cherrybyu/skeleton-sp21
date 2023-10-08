@@ -3,8 +3,6 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Objects;
-
 import static gitlet.Utils.*;
 
 public class Helpers {
@@ -53,10 +51,14 @@ public class Helpers {
      *
      *
      * @param fileId String
-     * @param cwd File
-     * @param blobDir File
+     * @param fileName String
+     *
      */
-    public static void overwriteWorkingFile(String fileId, String fileName, File cwd, File blobDir) {
+    public static void overwriteWorkingFile(
+            String fileId,
+            String fileName,
+            File cwd,
+            File blobDir) {
         Blob fileObject = Helpers.getBlob(blobDir, fileId);
         byte[] fileContents = fileObject.getFileContents();
         File originalFile = Utils.join(cwd, fileName);
