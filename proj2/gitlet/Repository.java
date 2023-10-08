@@ -421,6 +421,7 @@ public class Repository implements Serializable {
         Commit activeHeadCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
         HashMap<String, String> activeHeadBlobs = activeHeadCommit.getBlobs();
 
+        assert workingFiles != null;
         for (String fileName: workingFiles) {
             if (!activeHeadBlobs.containsKey(fileName)) {
                 Utils.message(
@@ -482,7 +483,6 @@ public class Repository implements Serializable {
                 Helpers.getFilesFromCommit(branchHeadCommit, BLOB_DIR);
         HashMap<String, byte[]> splitPointFiles =
                 Helpers.getFilesFromCommit(splitPointCommit, BLOB_DIR);
-        assert workingFiles != null;
 
 
         HashMap <String, byte[]> fileList =
@@ -511,6 +511,7 @@ public class Repository implements Serializable {
                     File newFile = Utils.join(CWD, fileName);
                     Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
                     mergeConflictEncountered = true;
+                    this.addCommand(fileName);
                 }
             }
 
@@ -525,7 +526,7 @@ public class Repository implements Serializable {
             if (splitPointFileContent != null) {
                 if (activeHeadFileContent == splitPointFileContent && branchHeadFileContent == null) {
                     stagingArea.remove(fileName);
-                    Utils.restrictedDelete(Utils.join(CWD, fileName));
+                    this.rmCommand(fileName);
                 }
             }
         }
