@@ -437,10 +437,12 @@ public class Repository implements Serializable {
 
         if (!branches.containsKey(branchName)) {
             Utils.message("A branch with that name does not exist.");
+            return;
         }
 
         if (Objects.equals(branchName, activeBranch)) {
             Utils.message("Cannot merge a branch with itself.");
+            return;
         }
 
         ArrayList<String> activeCommitHistory =  new ArrayList<>();
@@ -466,9 +468,11 @@ public class Repository implements Serializable {
 
         if (Objects.equals(splitPointId, branchHeadId)) {
             Utils.message("Given branch is an ancestor of the current branch.");
+            return;
         }
         if (Objects.equals(splitPointId, headCommit)) {
             Utils.message("Current branch fast-forwarded.");
+            return;
         }
 
         Commit branchHeadCommit = Helpers.getCommit(COMMIT_DIR, branchHeadId);
