@@ -135,7 +135,7 @@ public class Helpers {
                         + new String(activeFileContents, StandardCharsets.UTF_8)
                         + "=======\n"
                         + new String(branchFileContents, StandardCharsets.UTF_8)
-                        + ">>>>>>>");
+                        + ">>>>>>>\n");
     }
 
     public static Commit createCommit(

@@ -532,13 +532,24 @@ public class Repository implements Serializable {
                     }
                 }
             } else {
-                if (splitPointFileContent != null && Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
-                    stagingArea.remove(fileName);
-                    this.rmCommand(fileName);
+                if (activeHeadFileContent != null && splitPointFileContent != null) {
+                    if (!Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
+                        File newFile = Utils.join(CWD, fileName);
+                        byte[] empty = Utils.serialize("");
+                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, empty);
+                        mergeConflictEncountered = true;
+                        this.addCommand(fileName);
+
+//                            Utils.message(fileName);
+//                            System.out.println(readContentsAsString(newFile));
+                    }
+
+                    if (Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
+                        stagingArea.remove(fileName);
+                        this.rmCommand(fileName);
+                    }
                 }
             }
-
-
         }
 
         String commitMessage = "Merged " + branchName + " into " + activeBranch + ".";
