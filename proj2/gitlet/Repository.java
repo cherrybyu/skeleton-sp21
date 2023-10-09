@@ -194,16 +194,15 @@ public class Repository implements Serializable {
     }
 
     public void findCommand(String message) {
-        CommitData currCommit = commitHistory.get(headCommit);
-        String currCommitId = headCommit;
+        List<String> commitList = plainFilenamesIn(COMMIT_DIR);
         ArrayList<String> messagesToPrint = new ArrayList<>();
 
-        while (currCommit != null) {
-            if (currCommit.getCommitMessage().contains(message)) {
-                messagesToPrint.add(currCommitId);
+        assert commitList != null;
+        for (String commitId: commitList) {
+            Commit currCommit = Helpers.getCommit(COMMIT_DIR, commitId);
+            if (currCommit.getMessage().contains(message)) {
+                messagesToPrint.add(commitId);
             }
-            currCommitId = currCommit.getCommitParentId();
-            currCommit = commitHistory.get(currCommit.getCommitParentId());
         }
 
         if (messagesToPrint.isEmpty()) {
@@ -535,8 +534,7 @@ public class Repository implements Serializable {
                 if (activeHeadFileContent != null && splitPointFileContent != null) {
                     if (!Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
                         File newFile = Utils.join(CWD, fileName);
-                        byte[] empty = Utils.serialize("");
-                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, empty);
+                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
                         mergeConflictEncountered = true;
                         this.addCommand(fileName);
 

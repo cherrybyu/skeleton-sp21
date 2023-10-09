@@ -129,13 +129,22 @@ public class Helpers {
             byte[] activeFileContents,
             byte[] branchFileContents) {
 
-        Utils.writeContents(
-                file,
-                "<<<<<<< HEAD\n"
-                        + new String(activeFileContents, StandardCharsets.UTF_8)
-                        + "=======\n"
-                        + new String(branchFileContents, StandardCharsets.UTF_8)
-                        + ">>>>>>>\n");
+        if (branchFileContents != null) {
+            Utils.writeContents(
+                    file,
+                    "<<<<<<< HEAD\n"
+                            + new String(activeFileContents, StandardCharsets.UTF_8)
+                            + "=======\n"
+                            + new String(branchFileContents, StandardCharsets.UTF_8)
+                            + ">>>>>>>\n");
+        } else {
+            Utils.writeContents(
+                    file,
+                    "<<<<<<< HEAD\n"
+                            + new String(activeFileContents, StandardCharsets.UTF_8)
+                            + "=======\n"
+                            + ">>>>>>>\n");
+        }
     }
 
     public static Commit createCommit(
