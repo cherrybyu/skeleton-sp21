@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
@@ -131,9 +132,9 @@ public class Helpers {
         Utils.writeContents(
                 file,
                 "<<<<<<< HEAD\n"
-                        + new String(activeFileContents)
+                        + new String(activeFileContents, StandardCharsets.UTF_8)
                         + "=======\n"
-                        + new String(branchFileContents)
+                        + new String(branchFileContents, StandardCharsets.UTF_8)
                         + ">>>>>>>");
     }
 
