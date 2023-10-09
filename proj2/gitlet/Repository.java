@@ -494,43 +494,49 @@ public class Repository implements Serializable {
 
         Set<String> fileListKeys = fileList.keySet();
         boolean mergeConflictEncountered = false;
-
         for (String fileName: fileListKeys) {
+//            Utils.message(fileName);
+
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
             byte[] branchHeadFileContent = branchHeadFiles.get(fileName);
             byte[] splitPointFileContent = splitPointFiles.get(fileName);
             boolean isWorkingFile = workingFiles.contains(fileName);
 
-            if (splitPointFileContent == activeHeadFileContent && splitPointFileContent != branchHeadFileContent) {
-                Helpers.overwriteWorkingFile(
-                        branchHeadBlobs.get(fileName),
-                        fileName,
-                        CWD,
-                        BLOB_DIR);
-                this.addCommand(fileName);
-            }
-
-            if (splitPointFileContent != branchHeadFileContent && splitPointFileContent != activeHeadFileContent) {
-                if (activeHeadFileContent != branchHeadFileContent) {
-                    File newFile = Utils.join(CWD, fileName);
-                    Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
-                    mergeConflictEncountered = true;
+            if (branchHeadFileContent != null) {
+                if (splitPointFileContent == activeHeadFileContent
+                        && splitPointFileContent != branchHeadFileContent) {
+//                    Utils.message("split file == active file, split file != branch file and branch file exists");
+                    String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
+                    this.checkoutCommand(args);
                     this.addCommand(fileName);
+//                    Utils.message(stagingArea.keySet().toString());
+                }
+
+                if (activeHeadFileContent != null) {
+                    if (splitPointFileContent != branchHeadFileContent && splitPointFileContent != activeHeadFileContent) {
+                        if (activeHeadFileContent != branchHeadFileContent) {
+//                            Utils.message("merge conflict");
+                            File newFile = Utils.join(CWD, fileName);
+                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
+                            mergeConflictEncountered = true;
+                            this.addCommand(fileName);
+                        }
+                    }
+                }
+            } else {
+                if (splitPointFileContent == activeHeadFileContent) {
+//                    Utils.message("split file == active file, branch file == null");
+                    stagingArea.remove(fileName);
+                    this.rmCommand(fileName);
                 }
             }
 
             if (splitPointFileContent == null) {
                 if (activeHeadFileContent == null && branchHeadFileContent != null) {
+//                    Utils.message("split file == null, active file == null, branch file exists");
                     String[] args = new String[] {"checkout", branchHeadId, "--", fileName};
                     this.checkoutCommand(args);
                     this.addCommand(fileName);
-                }
-            }
-
-            if (splitPointFileContent != null) {
-                if (activeHeadFileContent == splitPointFileContent && branchHeadFileContent == null) {
-                    stagingArea.remove(fileName);
-                    this.rmCommand(fileName);
                 }
             }
         }
