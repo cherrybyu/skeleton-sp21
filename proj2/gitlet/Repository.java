@@ -88,9 +88,7 @@ public class Repository implements Serializable {
             String currFileId = currBlobs.get(fileName);
             List<String> blobFileNames = plainFilenamesIn(BLOB_DIR);
 
-            if (blobFileNames != null
-//                    && !blobFileNames.contains(newBlobData.id)
-                    && !Objects.equals(currFileId, newBlobData.id)) {
+            if (blobFileNames != null && !Objects.equals(currFileId, newBlobData.id)) {
                 stagingArea.put(fileName, newBlobData.id);
                 File blobFile = Utils.join(BLOB_DIR, newBlobData.id);
                 writeContents(blobFile, newBlobData.serialized);
@@ -519,24 +517,28 @@ public class Repository implements Serializable {
                             Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
                             mergeConflictEncountered = true;
                             this.addCommand(fileName);
+
+//                            Utils.message(fileName);
+//                            System.out.println(readContentsAsString(newFile));
                         }
                     }
                 }
-            }
 
-            if (branchHeadFileContent == null && splitPointFileContent != null && Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
-                stagingArea.remove(fileName);
-                this.rmCommand(fileName);
-            }
-
-
-            if (splitPointFileContent == null) {
-                if (activeHeadFileContent == null && branchHeadFileContent != null) {
-                    String[] args = new String[] {"checkout", branchHeadId, "--", fileName};
-                    this.checkoutCommand(args);
-                    this.addCommand(fileName);
+                if (splitPointFileContent == null) {
+                    if (activeHeadFileContent == null) {
+                        String[] args = new String[] {"checkout", branchHeadId, "--", fileName};
+                        this.checkoutCommand(args);
+                        this.addCommand(fileName);
+                    }
+                }
+            } else {
+                if (splitPointFileContent != null && Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
+                    stagingArea.remove(fileName);
+                    this.rmCommand(fileName);
                 }
             }
+
+
         }
 
         String commitMessage = "Merged " + branchName + " into " + activeBranch + ".";

@@ -127,12 +127,13 @@ public class Helpers {
             File file,
             byte[] activeFileContents,
             byte[] branchFileContents) {
+
         Utils.writeContents(
                 file,
-                "<<<<<<< HEAD \n"
-                        + activeFileContents
-                        + "======= \n"
-                        + branchFileContents
+                "<<<<<<< HEAD\n"
+                        + new String(activeFileContents)
+                        + "=======\n"
+                        + new String(branchFileContents)
                         + ">>>>>>>");
     }
 
