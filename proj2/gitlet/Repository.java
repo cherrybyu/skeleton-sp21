@@ -89,7 +89,7 @@ public class Repository implements Serializable {
             List<String> blobFileNames = plainFilenamesIn(BLOB_DIR);
 
             if (blobFileNames != null
-                    && !blobFileNames.contains(newBlobData.id)
+//                    && !blobFileNames.contains(newBlobData.id)
                     && !Objects.equals(currFileId, newBlobData.id)) {
                 stagingArea.put(fileName, newBlobData.id);
                 File blobFile = Utils.join(BLOB_DIR, newBlobData.id);
@@ -286,6 +286,13 @@ public class Repository implements Serializable {
                 if (currBlobs.containsKey(fileName)) {
                     String currFileId = currBlobs.get(fileName);
                     Helpers.overwriteWorkingFile(currFileId, fileName, CWD, BLOB_DIR);
+
+//                    FileData filedata = Helpers.getObjectAndId(Helpers.fileToBlob(CWD, fileName));
+//                    if (Helpers.isFileInDir(BLOB_DIR, filedata.id)) {
+//                        Utils.message("file is in blobdir");
+//                    } else {
+//                        Utils.message("file not in blobdir");
+//                    }
                     return;
                 }
                 Utils.message("File does not exist in that commit.");
@@ -417,7 +424,7 @@ public class Repository implements Serializable {
     public void mergeCommand(String branchName) throws IOException {
         List<String> workingFiles = plainFilenamesIn(CWD);
         Commit activeHeadCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
-        HashMap<String, String> activeHeadBlobs = activeHeadCommit.getBlobs();
+//        HashMap<String, String> activeHeadBlobs = activeHeadCommit.getBlobs();
 
         assert workingFiles != null;
         for (String fileName: workingFiles) {
@@ -478,9 +485,6 @@ public class Repository implements Serializable {
         Commit branchHeadCommit = Helpers.getCommit(COMMIT_DIR, branchHeadId);
         Commit splitPointCommit = Helpers.getCommit(COMMIT_DIR, splitPointId);
 
-        HashMap<String, String> branchHeadBlobs = branchHeadCommit.getBlobs();
-//        HashMap<String, String> splitPointBlobs = splitPointCommit.getBlobs();
-
         HashMap<String, byte[]> activeHeadFiles =
                 Helpers.getFilesFromCommit(activeHeadCommit, BLOB_DIR);
         HashMap<String, byte[]> branchHeadFiles =
@@ -495,27 +499,22 @@ public class Repository implements Serializable {
         Set<String> fileListKeys = fileList.keySet();
         boolean mergeConflictEncountered = false;
         for (String fileName: fileListKeys) {
-//            Utils.message(fileName);
-
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
             byte[] branchHeadFileContent = branchHeadFiles.get(fileName);
             byte[] splitPointFileContent = splitPointFiles.get(fileName);
-            boolean isWorkingFile = workingFiles.contains(fileName);
+//            boolean isWorkingFile = workingFiles.contains(fileName);
 
             if (branchHeadFileContent != null) {
                 if (splitPointFileContent == activeHeadFileContent
                         && splitPointFileContent != branchHeadFileContent) {
-//                    Utils.message("split file == active file, split file != branch file and branch file exists");
                     String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
                     this.checkoutCommand(args);
                     this.addCommand(fileName);
-//                    Utils.message(stagingArea.keySet().toString());
                 }
 
                 if (activeHeadFileContent != null) {
                     if (splitPointFileContent != branchHeadFileContent && splitPointFileContent != activeHeadFileContent) {
                         if (activeHeadFileContent != branchHeadFileContent) {
-//                            Utils.message("merge conflict");
                             File newFile = Utils.join(CWD, fileName);
                             Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
                             mergeConflictEncountered = true;
@@ -523,17 +522,16 @@ public class Repository implements Serializable {
                         }
                     }
                 }
-            } else {
-                if (splitPointFileContent == activeHeadFileContent) {
-//                    Utils.message("split file == active file, branch file == null");
-                    stagingArea.remove(fileName);
-                    this.rmCommand(fileName);
-                }
             }
+
+            if (branchHeadFileContent == null && splitPointFileContent != null && Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
+                stagingArea.remove(fileName);
+                this.rmCommand(fileName);
+            }
+
 
             if (splitPointFileContent == null) {
                 if (activeHeadFileContent == null && branchHeadFileContent != null) {
-//                    Utils.message("split file == null, active file == null, branch file exists");
                     String[] args = new String[] {"checkout", branchHeadId, "--", fileName};
                     this.checkoutCommand(args);
                     this.addCommand(fileName);
