@@ -93,6 +93,7 @@ public class Helpers {
             HashMap<String, byte[]> activeHeadFiles,
             HashMap<String, byte[]> branchHeadFiles,
             HashMap<String, byte[]> splitPointFiles,
+            HashMap<String, byte[]> splitPointFiles2,
             List<String> workingFiles) {
 
         HashMap <String, byte[]> fileList = new HashMap<>();
@@ -118,6 +119,14 @@ public class Helpers {
         for (String fileName: workingFiles) {
             if (!fileList.containsKey(fileName)) {
                 fileList.put(fileName, null);
+            }
+        }
+
+        if (splitPointFiles2 != null) {
+            for (String fileName: splitPointFiles2.keySet()) {
+                if (!fileList.containsKey(fileName)) {
+                    fileList.put(fileName, null);
+                }
             }
         }
 
@@ -156,6 +165,10 @@ public class Helpers {
         Date timeStamp = Date.from(Instant.now());
         String formattedDate = sdf.format(timeStamp);
         return new Commit(parentId, parentId2, message, blobs, formattedDate);
+    }
+
+    public static boolean isShortenedId(String shortenedId, String fullId) {
+        return fullId.substring(0, shortenedId.length() - 1).equals(shortenedId);
     }
 
 }

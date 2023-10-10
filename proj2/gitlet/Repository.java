@@ -449,16 +449,31 @@ public class Repository implements Serializable {
             return;
         }
 
-        ArrayList<String> activeCommitHistory =  new ArrayList<>();
+        HashSet<String> activeCommitHistory =  new HashSet<>();
         String currCommitId = headCommit;
+        boolean hasSecondParent = false;
         while (currCommitId != null) {
             activeCommitHistory.add(currCommitId);
             CommitData currCommitData = commitHistory.get(currCommitId);
+            if (currCommitData.getCommitParentId2() != null) {
+                hasSecondParent = true;
+            }
             currCommitId = currCommitData.getCommitParentId();
         }
 
+        HashSet<String> activeCommitHistory2 =  new HashSet<>();
+        if (hasSecondParent) {
+            currCommitId = headCommit;
+            while (currCommitId != null) {
+                activeCommitHistory2.add(currCommitId);
+                CommitData currCommitData = commitHistory.get(currCommitId);
+                currCommitId = currCommitData.getCommitParentId2();
+            }
+        }
+
         String branchHeadId = branches.get(branchName);
-        String splitPointId = null;
+        String splitPointId = "";
+        String splitPointId2 = "";
         String currBranchCommitId = branchHeadId;
         while (currBranchCommitId != null) {
             if (activeCommitHistory.contains(currBranchCommitId)) {
@@ -470,17 +485,36 @@ public class Repository implements Serializable {
             }
         }
 
-        if (Objects.equals(splitPointId, branchHeadId)) {
+        if (hasSecondParent) {
+            currBranchCommitId = branchHeadId;
+            while (currBranchCommitId != null) {
+                if (activeCommitHistory2.contains(currBranchCommitId)) {
+                    splitPointId2 = currBranchCommitId;
+                    break;
+                } else {
+                    CommitData currBranchCommitData = commitHistory.get(currBranchCommitId);
+                    currBranchCommitId = currBranchCommitData.getCommitParentId();
+                }
+            }
+        }
+
+        if (Objects.equals(splitPointId, branchHeadId) || Objects.equals(splitPointId2, branchHeadId)) {
             Utils.message("Given branch is an ancestor of the current branch.");
             return;
         }
-        if (Objects.equals(splitPointId, headCommit)) {
+
+        if (Objects.equals(splitPointId, headCommit) || Objects.equals(splitPointId2, headCommit)) {
             Utils.message("Current branch fast-forwarded.");
             return;
         }
 
         Commit branchHeadCommit = Helpers.getCommit(COMMIT_DIR, branchHeadId);
         Commit splitPointCommit = Helpers.getCommit(COMMIT_DIR, splitPointId);
+        Commit splitPointCommit2 = null;
+
+        if (hasSecondParent) {
+            splitPointCommit2 = Helpers.getCommit(COMMIT_DIR, splitPointId2);
+        }
 
         HashMap<String, byte[]> activeHeadFiles =
                 Helpers.getFilesFromCommit(activeHeadCommit, BLOB_DIR);
@@ -488,18 +522,25 @@ public class Repository implements Serializable {
                 Helpers.getFilesFromCommit(branchHeadCommit, BLOB_DIR);
         HashMap<String, byte[]> splitPointFiles =
                 Helpers.getFilesFromCommit(splitPointCommit, BLOB_DIR);
+        HashMap<String, byte[]> splitPointFiles2 = new HashMap<>();
+
+        if (hasSecondParent) {
+            splitPointFiles2 =
+                    Helpers.getFilesFromCommit(splitPointCommit2, BLOB_DIR);
+        }
 
 
         HashMap <String, byte[]> fileList =
-                Helpers.setUpFileList(activeHeadFiles, branchHeadFiles, splitPointFiles, workingFiles);
+                Helpers.setUpFileList(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2, workingFiles);
 
         Set<String> fileListKeys = fileList.keySet();
+
         boolean mergeConflictEncountered = false;
         for (String fileName: fileListKeys) {
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
             byte[] branchHeadFileContent = branchHeadFiles.get(fileName);
             byte[] splitPointFileContent = splitPointFiles.get(fileName);
-//            boolean isWorkingFile = workingFiles.contains(fileName);
+            byte[] splitPointFileContent2 = splitPointFiles2.get(fileName);
 
             if (branchHeadFileContent != null) {
                 if (splitPointFileContent == activeHeadFileContent
@@ -509,6 +550,15 @@ public class Repository implements Serializable {
                     this.addCommand(fileName);
                 }
 
+                if (hasSecondParent) {
+                    if (splitPointFileContent2 == activeHeadFileContent
+                            && splitPointFileContent2 != branchHeadFileContent) {
+                        String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
+                        this.checkoutCommand(args);
+                        this.addCommand(fileName);
+                    }
+                }
+
                 if (activeHeadFileContent != null) {
                     if (splitPointFileContent != branchHeadFileContent && splitPointFileContent != activeHeadFileContent) {
                         if (activeHeadFileContent != branchHeadFileContent) {
@@ -516,19 +566,37 @@ public class Repository implements Serializable {
                             Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
                             mergeConflictEncountered = true;
                             this.addCommand(fileName);
-
-//                            Utils.message(fileName);
-//                            System.out.println(readContentsAsString(newFile));
+                        }
+                    }
+                    if (hasSecondParent) {
+                        if (splitPointFileContent2 != branchHeadFileContent && splitPointFileContent2 != activeHeadFileContent) {
+                            if (activeHeadFileContent != branchHeadFileContent) {
+                                File newFile = Utils.join(CWD, fileName);
+                                Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
+                                mergeConflictEncountered = true;
+                                this.addCommand(fileName);
+                            }
                         }
                     }
                 }
 
-                if (splitPointFileContent == null) {
-                    if (activeHeadFileContent == null) {
-                        String[] args = new String[] {"checkout", branchHeadId, "--", fileName};
+                if (splitPointFileContent == null && activeHeadFileContent == null) {
+                    String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
+                    this.checkoutCommand(args);
+                    this.addCommand(fileName);
+                }
+
+                if (hasSecondParent) {
+                    if (splitPointFileContent2 == null && activeHeadFileContent == null) {
+                        String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
                         this.checkoutCommand(args);
                         this.addCommand(fileName);
                     }
+                }
+
+                if (hasSecondParent && Objects.equals(fileName, "f.txt")) {
+                    Utils.message(fileName);
+                    Utils.message(stagingArea.keySet().toString());
                 }
             } else {
                 if (activeHeadFileContent != null && splitPointFileContent != null) {
@@ -537,14 +605,27 @@ public class Repository implements Serializable {
                         Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
                         mergeConflictEncountered = true;
                         this.addCommand(fileName);
-
-//                            Utils.message(fileName);
-//                            System.out.println(readContentsAsString(newFile));
                     }
 
                     if (Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
                         stagingArea.remove(fileName);
                         this.rmCommand(fileName);
+                    }
+                }
+
+                if (hasSecondParent) {
+                    if (activeHeadFileContent != null && splitPointFileContent2 != null) {
+                        if (!Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
+                            File newFile = Utils.join(CWD, fileName);
+                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
+                            mergeConflictEncountered = true;
+                            this.addCommand(fileName);
+                        }
+                        
+                        if (Arrays.equals(activeHeadFileContent,splitPointFileContent2)) {
+                            stagingArea.remove(fileName);
+                            this.rmCommand(fileName);
+                        }
                     }
                 }
             }
