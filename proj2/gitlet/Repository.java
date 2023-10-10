@@ -545,16 +545,16 @@ public class Repository implements Serializable {
             byte[] splitPointFileContent2 = splitPointFiles2.get(fileName);
 
             if (branchHeadFileContent != null) {
-                if (splitPointFileContent == activeHeadFileContent
-                        && splitPointFileContent != branchHeadFileContent) {
+                if (Arrays.equals(splitPointFileContent, activeHeadFileContent)
+                        && !Arrays.equals(splitPointFileContent, branchHeadFileContent)) {
                     String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
                     this.checkoutCommand(args);
                     this.addCommand(fileName);
                 }
 
                 if (hasSecondParent) {
-                    if (splitPointFileContent2 == activeHeadFileContent
-                            && splitPointFileContent2 != branchHeadFileContent) {
+                    if (Arrays.equals(splitPointFileContent2, activeHeadFileContent)
+                            && !Arrays.equals(splitPointFileContent2, branchHeadFileContent)) {
                         String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
                         this.checkoutCommand(args);
                         this.addCommand(fileName);
@@ -562,7 +562,8 @@ public class Repository implements Serializable {
                 }
 
                 if (activeHeadFileContent != null) {
-                    if (splitPointFileContent != branchHeadFileContent && splitPointFileContent != activeHeadFileContent) {
+                    if (!Arrays.equals(splitPointFileContent, branchHeadFileContent)
+                            && !Arrays.equals(splitPointFileContent, activeHeadFileContent)) {
                         if (activeHeadFileContent != branchHeadFileContent) {
                             File newFile = Utils.join(CWD, fileName);
                             Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
@@ -571,7 +572,8 @@ public class Repository implements Serializable {
                         }
                     }
                     if (hasSecondParent) {
-                        if (splitPointFileContent2 != branchHeadFileContent && splitPointFileContent2 != activeHeadFileContent) {
+                        if (!Arrays.equals(splitPointFileContent2, branchHeadFileContent)
+                                && !Arrays.equals(splitPointFileContent2, activeHeadFileContent)) {
                             if (activeHeadFileContent != branchHeadFileContent) {
                                 File newFile = Utils.join(CWD, fileName);
                                 Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
