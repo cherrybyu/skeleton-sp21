@@ -273,8 +273,14 @@ public class Repository implements Serializable {
                 Utils.message("Incorrect operands.");
                 return;
             }
+
             String commitId = args[1];
             String fileName = args[3];
+
+            if (commitId.length() < headCommit.length()) {
+                String shortId = commitId;
+                commitId = Helpers.getFullCommitId(COMMIT_DIR, shortId);
+            }
 
             if (commitHistory.containsKey(commitId)) {
                 Commit currCommit = Helpers.getCommit(COMMIT_DIR, commitId);
@@ -283,13 +289,6 @@ public class Repository implements Serializable {
                 if (currBlobs.containsKey(fileName)) {
                     String currFileId = currBlobs.get(fileName);
                     Helpers.overwriteWorkingFile(currFileId, fileName, CWD, BLOB_DIR);
-
-//                    FileData filedata = Helpers.getObjectAndId(Helpers.fileToBlob(CWD, fileName));
-//                    if (Helpers.isFileInDir(BLOB_DIR, filedata.id)) {
-//                        Utils.message("file is in blobdir");
-//                    } else {
-//                        Utils.message("file not in blobdir");
-//                    }
                     return;
                 }
                 Utils.message("File does not exist in that commit.");
@@ -421,7 +420,6 @@ public class Repository implements Serializable {
     public void mergeCommand(String branchName) throws IOException {
         List<String> workingFiles = plainFilenamesIn(CWD);
         Commit activeHeadCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
-//        HashMap<String, String> activeHeadBlobs = activeHeadCommit.getBlobs();
 
         assert workingFiles != null;
         for (String fileName: workingFiles) {

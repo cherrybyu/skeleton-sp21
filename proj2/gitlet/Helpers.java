@@ -168,8 +168,17 @@ public class Helpers {
     }
 
     public static boolean isShortenedId(String shortenedId, String fullId) {
-        return fullId.substring(0, shortenedId.length() - 1).equals(shortenedId);
+        return fullId.substring(0, shortenedId.length()).equals(shortenedId);
     }
 
+    public static String getFullCommitId(File dir, String shortenedId) {
+        List<String> commitIdList = plainFilenamesIn(dir);
+        for (String fullId: commitIdList) {
+            if (Helpers.isShortenedId(shortenedId, fullId)) {
+                return fullId;
+            }
+        }
+        return null;
+    }
 }
 
