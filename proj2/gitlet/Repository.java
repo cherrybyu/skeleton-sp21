@@ -504,6 +504,8 @@ public class Repository implements Serializable {
         }
 
         if (Objects.equals(splitPointId, headCommit) || Objects.equals(splitPointId2, headCommit)) {
+            String[] args = new String[]{"checkout", branchName};
+            this.checkoutCommand(args);
             Utils.message("Current branch fast-forwarded.");
             return;
         }
@@ -621,7 +623,7 @@ public class Repository implements Serializable {
                             mergeConflictEncountered = true;
                             this.addCommand(fileName);
                         }
-                        
+
                         if (Arrays.equals(activeHeadFileContent,splitPointFileContent2)) {
                             stagingArea.remove(fileName);
                             this.rmCommand(fileName);
