@@ -17,7 +17,7 @@ public class Helpers {
     /** Takes an object and serializes it. Once serialized, creates a
      * SHA-1 hash. Returns a FileData instance that contains both the SHA-1
      * hash and the serialized object. */
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+    private static final SimpleDateFormat SDF = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
 
     public static FileData getObjectAndId(Object object) {
         byte[] serializedObject = serialize((Serializable) object);
@@ -96,7 +96,7 @@ public class Helpers {
             HashMap<String, byte[]> splitPointFiles2,
             List<String> workingFiles) {
 
-        HashMap <String, byte[]> fileList = new HashMap<>();
+        HashMap<String, byte[]> fileList = new HashMap<>();
 
         for (String fileName: activeHeadFiles.keySet()) {
             if (!fileList.containsKey(fileName)) {
@@ -163,7 +163,7 @@ public class Helpers {
             HashMap<String, String> blobs) {
 
         Date timeStamp = Date.from(Instant.now());
-        String formattedDate = sdf.format(timeStamp);
+        String formattedDate = SDF.format(timeStamp);
         return new Commit(parentId, parentId2, message, blobs, formattedDate);
     }
 

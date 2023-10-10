@@ -251,7 +251,7 @@ public class Repository implements Serializable {
         System.out.println();
     }
 
-    public void checkoutCommand(String[] args) throws IOException {
+    public void checkoutCommand(String[] args) throws IOException { //TODO shorten
         if (args.length == 3) { // `checkout -- [fileName]` command
             if (!Objects.equals(args[1], "--")) {
                 Utils.message("Incorrect operands.");
@@ -315,7 +315,7 @@ public class Repository implements Serializable {
                 for (String file: workingFiles) {
                     if (!currBlobKeys.contains(file)) {
                         Utils.message(
-                                "There is an untracked file in the way; delete it, or add and commit it first."
+                                "There is an untracked file in the way;delete it, or add and commit it first." //TODO SHORTEN
                         );
                         return;
                     }
@@ -323,7 +323,7 @@ public class Repository implements Serializable {
             }
             if (!stagingArea.isEmpty()) {
                 Utils.message(
-                        "There is an untracked file in the way; delete it, or add and commit it first."
+                        "There is an untracked file in the way; delete it, or add and commit it first." //TODO SHORTEN
                 );
                 return;
             }
@@ -391,7 +391,7 @@ public class Repository implements Serializable {
 
                 if (!Helpers.isFileInDir(BLOB_DIR, fileData.id)) {
                     Utils.message(
-                            "There is an untracked file in the way; delete it, or add and commit it first."
+                            "There is an untracked file in the way; delete it, or add and commit it first." //TODO SHORTEN
                     );
                     return;
                 }
@@ -417,7 +417,7 @@ public class Repository implements Serializable {
         branches.replace(activeBranch, commitId);
     }
 
-    public void mergeCommand(String branchName) throws IOException {
+    public void mergeCommand(String branchName) throws IOException { //TODO SHORTEN
         List<String> workingFiles = plainFilenamesIn(CWD);
         Commit activeHeadCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
 
@@ -427,7 +427,7 @@ public class Repository implements Serializable {
             FileData blobData = Helpers.getObjectAndId(blob);
             if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
                 Utils.message(
-                        "There is an untracked file in the way; delete it, or add and commit it first.");
+                        "There is an untracked file in the way; delete it, or add and commit it first."); //TODO SHORTEN
                 return;
             }
         }
@@ -496,7 +496,7 @@ public class Repository implements Serializable {
             }
         }
 
-        if (Objects.equals(splitPointId, branchHeadId) || Objects.equals(splitPointId2, branchHeadId)) {
+        if (Objects.equals(splitPointId, branchHeadId) || Objects.equals(splitPointId2, branchHeadId)) { //TODO SHORTEN
             Utils.message("Given branch is an ancestor of the current branch.");
             return;
         }
@@ -530,8 +530,8 @@ public class Repository implements Serializable {
         }
 
 
-        HashMap <String, byte[]> fileList =
-                Helpers.setUpFileList(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2, workingFiles);
+        HashMap<String, byte[]> fileList =
+                Helpers.setUpFileList(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2, workingFiles); //TODO SHORTEN
 
         Set<String> fileListKeys = fileList.keySet();
 
@@ -564,7 +564,7 @@ public class Repository implements Serializable {
                             && !Arrays.equals(splitPointFileContent, activeHeadFileContent)) {
                         if (activeHeadFileContent != branchHeadFileContent) {
                             File newFile = Utils.join(CWD, fileName);
-                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
+                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
                             mergeConflictEncountered = true;
                             this.addCommand(fileName);
                         }
@@ -574,7 +574,7 @@ public class Repository implements Serializable {
                                 && !Arrays.equals(splitPointFileContent2, activeHeadFileContent)) {
                             if (activeHeadFileContent != branchHeadFileContent) {
                                 File newFile = Utils.join(CWD, fileName);
-                                Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent);
+                                Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
                                 mergeConflictEncountered = true;
                                 this.addCommand(fileName);
                             }
@@ -624,7 +624,7 @@ public class Repository implements Serializable {
                             this.addCommand(fileName);
                         }
 
-                        if (Arrays.equals(activeHeadFileContent,splitPointFileContent2)) {
+                        if (Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
                             stagingArea.remove(fileName);
                             this.rmCommand(fileName);
                         }
@@ -636,7 +636,9 @@ public class Repository implements Serializable {
         String commitMessage = "Merged " + branchName + " into " + activeBranch + ".";
         this.mergeCommit(commitMessage, branchHeadId);
 
-        if (mergeConflictEncountered) { Utils.message("Encountered a merge conflict."); }
+        if (mergeConflictEncountered) {
+            Utils.message("Encountered a merge conflict.");
+        }
     }
 
     private void mergeCommit(String message, String parentId2) {
@@ -694,42 +696,6 @@ public class Repository implements Serializable {
         commitHistory.put(commitId, commitData);
         headCommit = commitId;
         branches.replace(activeBranch, headCommit);
-    }
-}
-
-class CommitData implements Serializable {
-    private final String commitParentId;
-    private final String commitParentId2;
-    private final String commitTimestamp;
-    private final String commitMessage;
-
-    CommitData(String commitParentId, String commitParentId2, String commitTimestamp, String commitMessage) {
-        this.commitParentId = commitParentId;
-        this.commitParentId2 = commitParentId2;
-        this.commitTimestamp = commitTimestamp;
-        this.commitMessage = commitMessage;
-    }
-
-    public String getCommitParentId() {
-        return commitParentId;
-    }
-    public String getCommitParentId2() {
-        return commitParentId2;
-    }
-    public String getCommitTimestamp() {
-        return commitTimestamp;
-    }
-    public String getCommitMessage() {
-        return commitMessage;
-    }
-}
-
-class FileData {
-    String id;
-    byte[] serialized;
-    FileData(String objectId, byte[] serializedObject) {
-        this.id = objectId;
-        this.serialized = serializedObject;
     }
 }
 
