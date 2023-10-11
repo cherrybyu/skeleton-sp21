@@ -25,19 +25,19 @@ public class Repository implements Serializable {
     /** The .gitlet directory. */
     private final File GITLET_DIR = join(CWD, ".gitlet");
     /** The commit directory */
-    private File COMMIT_DIR = join(GITLET_DIR, "commits");
+    private final File COMMIT_DIR = join(GITLET_DIR, "commits");
     /** The blob directory */
-    private File BLOB_DIR = join(GITLET_DIR, "blobs");
+    private final File BLOB_DIR = join(GITLET_DIR, "blobs");
     /** Stores branches mapped to their head commit */
-    private HashMap<String, String> branches = new HashMap<>();
+    private final HashMap<String, String> branches = new HashMap<>();
     private String activeBranch;
     /** stores commit ids mapped to that commit's data*/
-    private HashMap<String, CommitData> commitHistory = new HashMap<>();
+    private final HashMap<String, CommitData> commitHistory = new HashMap<>();
     /** The staging area. stores filenames mapped to their blob's id */
-    private HashMap<String, String> stagingArea = new HashMap<>();
-    private ArrayList<String> removalArea = new ArrayList<>();
+    private final HashMap<String, String> stagingArea = new HashMap<>();
+    private final ArrayList<String> removalArea = new ArrayList<>();
     private String headCommit;
-    private SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+    private final SimpleDateFormat SDF = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
 
     /**
      * Creates a new Gitlet version-control system in the current directory.
@@ -47,9 +47,7 @@ public class Repository implements Serializable {
      */
     public void initCommand() throws IOException {
         if (GITLET_DIR.exists()) {
-            Utils.message(
-                    "A Gitlet version-control system already exists in the current directory."
-            );
+            Messages.gitletAlreadyExists();
         }
 
         CWD.mkdir();
@@ -58,7 +56,7 @@ public class Repository implements Serializable {
         BLOB_DIR.mkdir();
 
         Date timeStamp = Date.from(Instant.EPOCH);
-        String formattedDate = sdf.format(timeStamp);
+        String formattedDate = SDF.format(timeStamp);
         Commit initCommit = new Commit(
                 null,
                 null,
@@ -72,7 +70,7 @@ public class Repository implements Serializable {
     public void addCommand(String fileName) throws IOException {
         try {
             if (!plainFilenamesIn(CWD).contains(fileName)) {
-                throw new IllegalArgumentException("File does not exist");
+                throw Utils.error("File does not exist");
             }
 
             if (removalArea.contains(fileName)) {
@@ -83,7 +81,7 @@ public class Repository implements Serializable {
             Blob newBlob = Helpers.fileToBlob(CWD, fileName);
             FileData newBlobData = Helpers.getObjectAndId(newBlob);
 
-            Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+            Commit currCommit = Helpers.getCommit(headCommit);
             HashMap<String, String> currBlobs = currCommit.getBlobs();
             String currFileId = currBlobs.get(fileName);
             List<String> blobFileNames = plainFilenamesIn(BLOB_DIR);
@@ -94,7 +92,7 @@ public class Repository implements Serializable {
                 writeContents(blobFile, newBlobData.serialized);
             }
 
-        } catch (IllegalArgumentException e) {
+        } catch (GitletException e) {
             Utils.message(e.getMessage());
         }
     }
@@ -110,7 +108,7 @@ public class Repository implements Serializable {
             return;
         }
 
-        Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+        Commit currCommit = Helpers.getCommit(headCommit);
         HashMap<String, String> blobs = currCommit.getBlobs();
 
         Set<String> stagingKeys = stagingArea.keySet();
@@ -142,7 +140,7 @@ public class Repository implements Serializable {
             if (stagingArea.containsKey(fileName)) {
                 stagingArea.remove(fileName);
             } else {
-                Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+                Commit currCommit = Helpers.getCommit(headCommit);
                 HashMap<String, String> currBlobs = currCommit.getBlobs();
                 List<String> workingFiles = plainFilenamesIn(CWD);
 
@@ -154,10 +152,10 @@ public class Repository implements Serializable {
                         removalArea.add(fileName);
                     }
                 } else {
-                    throw new IllegalArgumentException("No reason to remove the file.");
+                    throw Utils.error("No reason to remove the file.");
                 }
             }
-        } catch (IllegalArgumentException e) {
+        } catch (GitletException e) {
             Utils.message(e.getMessage());
         }
     }
@@ -199,7 +197,7 @@ public class Repository implements Serializable {
 
         assert commitList != null;
         for (String commitId: commitList) {
-            Commit currCommit = Helpers.getCommit(COMMIT_DIR, commitId);
+            Commit currCommit = Helpers.getCommit(commitId);
             if (currCommit.getMessage().contains(message)) {
                 messagesToPrint.add(commitId);
             }
@@ -251,44 +249,36 @@ public class Repository implements Serializable {
         System.out.println();
     }
 
-    public void checkoutCommand(String[] args) throws IOException { //TODO shorten
+    public void checkoutCommand(String[] args) throws IOException {
+        Helpers.verifyCheckoutArgs(args);
         if (args.length == 3) { // `checkout -- [fileName]` command
-            if (!Objects.equals(args[1], "--")) {
-                Utils.message("Incorrect operands.");
-                return;
-            }
             String fileName = args[2];
-            Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+            Commit currCommit = Helpers.getCommit(headCommit);
             HashMap<String, String> currBlobs = currCommit.getBlobs();
 
             if (currBlobs.containsKey(fileName)) {
                 String fileId = currBlobs.get(fileName);
-                Helpers.overwriteWorkingFile(fileId, fileName, CWD, BLOB_DIR);
+                Helpers.overwriteWorkingFile(fileId, fileName, BLOB_DIR);
                 return;
             }
 
             Utils.message("File does not exist in that commit.");
         } else if (args.length == 4) { // `checkout [commit id] -- [fileName]` command
-            if (!Objects.equals(args[2], "--")) {
-                Utils.message("Incorrect operands.");
-                return;
-            }
-
             String commitId = args[1];
             String fileName = args[3];
 
             if (commitId.length() < headCommit.length()) {
                 String shortId = commitId;
-                commitId = Helpers.getFullCommitId(COMMIT_DIR, shortId);
+                commitId = Helpers.getFullCommitId(shortId);
             }
 
             if (commitHistory.containsKey(commitId)) {
-                Commit currCommit = Helpers.getCommit(COMMIT_DIR, commitId);
+                Commit currCommit = Helpers.getCommit(commitId);
                 HashMap<String, String> currBlobs = currCommit.getBlobs();
 
                 if (currBlobs.containsKey(fileName)) {
                     String currFileId = currBlobs.get(fileName);
-                    Helpers.overwriteWorkingFile(currFileId, fileName, CWD, BLOB_DIR);
+                    Helpers.overwriteWorkingFile(currFileId, fileName, BLOB_DIR);
                     return;
                 }
                 Utils.message("File does not exist in that commit.");
@@ -306,38 +296,19 @@ public class Repository implements Serializable {
                 return;
             }
 
-            Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+            Helpers.findUntrackedFiles();
+
+            Commit currCommit = Helpers.getCommit(headCommit);
             HashMap<String, String> currBlobs = currCommit.getBlobs();
             Set<String> currBlobKeys = currBlobs.keySet();
-            List<String> workingFiles = plainFilenamesIn(CWD);
-
-            if (workingFiles != null && !workingFiles.isEmpty()) {
-                for (String file: workingFiles) {
-                    if (!currBlobKeys.contains(file)) {
-                        Utils.message(
-                                "There is an untracked file in the way;delete it, or add and commit it first." //TODO SHORTEN
-                        );
-                        return;
-                    }
-                }
-            }
-            if (!stagingArea.isEmpty()) {
-                Utils.message(
-                        "There is an untracked file in the way; delete it, or add and commit it first." //TODO SHORTEN
-                );
-                return;
-            }
 
             String branchHeadId = branches.get(branchName);
-            Commit branchHeadCommit = Helpers.getCommit(COMMIT_DIR, branchHeadId);
+            Commit branchHeadCommit = Helpers.getCommit(branchHeadId);
             HashMap<String, String> branchHeadBlobs = branchHeadCommit.getBlobs();
             Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
 
-            for (String fileName: currBlobKeys) {
-                if (!branchHeadBlobKeys.contains(fileName)) {
-                    Utils.restrictedDelete(Utils.join(CWD, fileName));
-                }
-            }
+            Helpers.deleteFilesNotInBranch(currBlobKeys, branchHeadBlobKeys);
+
             for (String fileName: branchHeadBlobKeys) {
                 String[] newArgs = new String[] {"checkout", branchHeadId, "--", fileName};
                 this.checkoutCommand(newArgs);
@@ -377,39 +348,13 @@ public class Repository implements Serializable {
             return;
         }
 
-        Commit commit = Helpers.getCommit(COMMIT_DIR, commitId);
-        HashMap<String, String> blobs = commit.getBlobs();
-        Set<String> blobKeys = blobs.keySet();
-        List<String> workingFiles = plainFilenamesIn(CWD);
-
-        if (workingFiles != null) {
-            for (String file: workingFiles) {
-                File originalFile = Utils.join(CWD, file);
-                byte[] fileContents = readContents(originalFile);
-                Blob newBlob = new Blob(file, fileContents);
-                FileData fileData = Helpers.getObjectAndId(newBlob);
-
-                if (!Helpers.isFileInDir(BLOB_DIR, fileData.id)) {
-                    Utils.message(
-                            "There is an untracked file in the way; delete it, or add and commit it first." //TODO SHORTEN
-                    );
-                    return;
-                }
-            }
-        }
+        Set<String> blobKeys = Helpers.getBlobKeys(commitId);
+        Helpers.findUntrackedFiles();
+        Helpers.deleteFilesNotInCommit(blobKeys);
 
         for (String fileName: blobKeys) {
             String[] args = new String[]{"checkout", commitId, "--", fileName};
             this.checkoutCommand(args);
-        }
-
-        if (workingFiles != null) {
-            for (String file: workingFiles) {
-                if (!blobKeys.contains(file)) {
-                    File toDelete = Utils.join(CWD, file);
-                    restrictedDelete(toDelete);
-                }
-            }
         }
 
         stagingArea.clear();
@@ -417,224 +362,70 @@ public class Repository implements Serializable {
         branches.replace(activeBranch, commitId);
     }
 
-    public void mergeCommand(String branchName) throws IOException { //TODO SHORTEN
-        List<String> workingFiles = plainFilenamesIn(CWD);
-        Commit activeHeadCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
-
-        assert workingFiles != null;
-        for (String fileName: workingFiles) {
-            Blob blob = Helpers.fileToBlob(CWD, fileName);
-            FileData blobData = Helpers.getObjectAndId(blob);
-            if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
-                Utils.message(
-                        "There is an untracked file in the way; delete it, or add and commit it first."); //TODO SHORTEN
-                return;
-            }
-        }
-
-        if (!stagingArea.isEmpty() || !removalArea.isEmpty()) {
-            Utils.message("You have uncommitted changes.");
+    public void mergeCommand(String branchName) throws IOException {
+        Helpers.findUntrackedFiles();
+        if (!Helpers.checkMergeErrorCases(stagingArea, removalArea, branches, branchName, activeBranch)) {
             return;
         }
 
-        if (!branches.containsKey(branchName)) {
-            Utils.message("A branch with that name does not exist.");
-            return;
-        }
-
-        if (Objects.equals(branchName, activeBranch)) {
-            Utils.message("Cannot merge a branch with itself.");
-            return;
-        }
-
-        HashSet<String> activeCommitHistory =  new HashSet<>();
-        String currCommitId = headCommit;
-        boolean hasSecondParent = false;
-        while (currCommitId != null) {
-            activeCommitHistory.add(currCommitId);
-            CommitData currCommitData = commitHistory.get(currCommitId);
-            if (currCommitData.getCommitParentId2() != null) {
-                hasSecondParent = true;
-            }
-            currCommitId = currCommitData.getCommitParentId();
-        }
-
-        HashSet<String> activeCommitHistory2 =  new HashSet<>();
-        if (hasSecondParent) {
-            currCommitId = headCommit;
-            while (currCommitId != null) {
-                activeCommitHistory2.add(currCommitId);
-                CommitData currCommitData = commitHistory.get(currCommitId);
-                currCommitId = currCommitData.getCommitParentId2();
-            }
-        }
+        CommitData headCommitData = commitHistory.get(headCommit);
+        boolean hasSecondParent = Helpers.isStringNotNull(headCommitData.getCommitParentId2());
 
         String branchHeadId = branches.get(branchName);
-        String splitPointId = "";
+        String splitPointId = Helpers.getSplitPoint(headCommit, branchHeadId, commitHistory, false);
         String splitPointId2 = "";
-        String currBranchCommitId = branchHeadId;
-        while (currBranchCommitId != null) {
-            if (activeCommitHistory.contains(currBranchCommitId)) {
-                splitPointId = currBranchCommitId;
-                break;
-            } else {
-                CommitData currBranchCommitData = commitHistory.get(currBranchCommitId);
-                currBranchCommitId = currBranchCommitData.getCommitParentId();
-            }
-        }
-
         if (hasSecondParent) {
-            currBranchCommitId = branchHeadId;
-            while (currBranchCommitId != null) {
-                if (activeCommitHistory2.contains(currBranchCommitId)) {
-                    splitPointId2 = currBranchCommitId;
-                    break;
-                } else {
-                    CommitData currBranchCommitData = commitHistory.get(currBranchCommitId);
-                    currBranchCommitId = currBranchCommitData.getCommitParentId();
-                }
-            }
+            splitPointId2 = Helpers.getSplitPoint(headCommit, branchHeadId, commitHistory, true);
         }
 
-        if (Objects.equals(splitPointId, branchHeadId) || Objects.equals(splitPointId2, branchHeadId)) { //TODO SHORTEN
-            Utils.message("Given branch is an ancestor of the current branch.");
+        if (!Helpers.checkMergeSpecialCases(splitPointId, splitPointId2, branchHeadId, headCommit, branchName, this)) {
             return;
         }
 
-        if (Objects.equals(splitPointId, headCommit) || Objects.equals(splitPointId2, headCommit)) {
-            String[] args = new String[]{"checkout", branchName};
-            this.checkoutCommand(args);
-            Utils.message("Current branch fast-forwarded.");
-            return;
-        }
-
-        Commit branchHeadCommit = Helpers.getCommit(COMMIT_DIR, branchHeadId);
-        Commit splitPointCommit = Helpers.getCommit(COMMIT_DIR, splitPointId);
+        Commit activeHeadCommit = Helpers.getCommit(headCommit);
+        Commit branchHeadCommit = Helpers.getCommit(branchHeadId);
+        Commit splitPointCommit = Helpers.getCommit(splitPointId);
         Commit splitPointCommit2 = null;
-
         if (hasSecondParent) {
-            splitPointCommit2 = Helpers.getCommit(COMMIT_DIR, splitPointId2);
+            splitPointCommit2 = Helpers.getCommit(splitPointId2);
         }
 
         HashMap<String, byte[]> activeHeadFiles =
-                Helpers.getFilesFromCommit(activeHeadCommit, BLOB_DIR);
+                Helpers.getFilesFromCommit(activeHeadCommit);
         HashMap<String, byte[]> branchHeadFiles =
-                Helpers.getFilesFromCommit(branchHeadCommit, BLOB_DIR);
+                Helpers.getFilesFromCommit(branchHeadCommit);
         HashMap<String, byte[]> splitPointFiles =
-                Helpers.getFilesFromCommit(splitPointCommit, BLOB_DIR);
+                Helpers.getFilesFromCommit(splitPointCommit);
         HashMap<String, byte[]> splitPointFiles2 = new HashMap<>();
-
         if (hasSecondParent) {
             splitPointFiles2 =
-                    Helpers.getFilesFromCommit(splitPointCommit2, BLOB_DIR);
+                    Helpers.getFilesFromCommit(splitPointCommit2);
         }
 
-
-        HashMap<String, byte[]> fileList =
-                Helpers.setUpFileList(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2, workingFiles); //TODO SHORTEN
-
-        Set<String> fileListKeys = fileList.keySet();
-
         boolean mergeConflictEncountered = false;
-        for (String fileName: fileListKeys) {
+        HashSet<String> fileSet =
+                Helpers.setUpFileSet(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2);
+
+        for (String fileName: fileSet) {
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
             byte[] branchHeadFileContent = branchHeadFiles.get(fileName);
             byte[] splitPointFileContent = splitPointFiles.get(fileName);
             byte[] splitPointFileContent2 = splitPointFiles2.get(fileName);
 
-            if (branchHeadFileContent != null) {
-                if (Arrays.equals(splitPointFileContent, activeHeadFileContent)
-                        && !Arrays.equals(splitPointFileContent, branchHeadFileContent)) {
-                    String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
-                    this.checkoutCommand(args);
-                    this.addCommand(fileName);
-                }
-
-                if (hasSecondParent) {
-                    if (Arrays.equals(splitPointFileContent2, activeHeadFileContent)
-                            && !Arrays.equals(splitPointFileContent2, branchHeadFileContent)) {
-                        String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
-                        this.checkoutCommand(args);
-                        this.addCommand(fileName);
-                    }
-                }
-
-                if (activeHeadFileContent != null) {
-                    if (!Arrays.equals(splitPointFileContent, branchHeadFileContent)
-                            && !Arrays.equals(splitPointFileContent, activeHeadFileContent)) {
-                        if (activeHeadFileContent != branchHeadFileContent) {
-                            File newFile = Utils.join(CWD, fileName);
-                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
-                            mergeConflictEncountered = true;
-                            this.addCommand(fileName);
-                        }
-                    }
-                    if (hasSecondParent) {
-                        if (!Arrays.equals(splitPointFileContent2, branchHeadFileContent)
-                                && !Arrays.equals(splitPointFileContent2, activeHeadFileContent)) {
-                            if (activeHeadFileContent != branchHeadFileContent) {
-                                File newFile = Utils.join(CWD, fileName);
-                                Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
-                                mergeConflictEncountered = true;
-                                this.addCommand(fileName);
-                            }
-                        }
-                    }
-                }
-
-                if (splitPointFileContent == null && activeHeadFileContent == null) {
-                    String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
-                    this.checkoutCommand(args);
-                    this.addCommand(fileName);
-                }
-
-                if (hasSecondParent) {
-                    if (splitPointFileContent2 == null && activeHeadFileContent == null) {
-                        String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
-                        this.checkoutCommand(args);
-                        this.addCommand(fileName);
-                    }
-                }
-
-                if (hasSecondParent && Objects.equals(fileName, "f.txt")) {
-                    Utils.message(fileName);
-                    Utils.message(stagingArea.keySet().toString());
-                }
-            } else {
-                if (activeHeadFileContent != null && splitPointFileContent != null) {
-                    if (!Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
-                        File newFile = Utils.join(CWD, fileName);
-                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
-                        mergeConflictEncountered = true;
-                        this.addCommand(fileName);
-                    }
-
-                    if (Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
-                        stagingArea.remove(fileName);
-                        this.rmCommand(fileName);
-                    }
-                }
-
-                if (hasSecondParent) {
-                    if (activeHeadFileContent != null && splitPointFileContent2 != null) {
-                        if (!Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
-                            File newFile = Utils.join(CWD, fileName);
-                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
-                            mergeConflictEncountered = true;
-                            this.addCommand(fileName);
-                        }
-
-                        if (Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
-                            stagingArea.remove(fileName);
-                            this.rmCommand(fileName);
-                        }
-                    }
-                }
+            if (Helpers.compareFilesForMerge(
+                    activeHeadFileContent,
+                    branchHeadFileContent,
+                    splitPointFileContent,
+                    splitPointFileContent2,
+                    fileName,
+                    branchHeadId,
+                    hasSecondParent,
+                    this)) {
+                mergeConflictEncountered = true;
             }
         }
 
-        String commitMessage = "Merged " + branchName + " into " + activeBranch + ".";
-        this.mergeCommit(commitMessage, branchHeadId);
+        this.mergeCommit(Messages.mergeCommitMessage(branchName, activeBranch), branchHeadId);
 
         if (mergeConflictEncountered) {
             Utils.message("Encountered a merge conflict.");
@@ -647,7 +438,7 @@ public class Repository implements Serializable {
             return;
         }
 
-        Commit currCommit = Helpers.getCommit(COMMIT_DIR, headCommit);
+        Commit currCommit = Helpers.getCommit(headCommit);
         HashMap<String, String> blobs = currCommit.getBlobs();
 
         Set<String> stagingKeys = stagingArea.keySet();

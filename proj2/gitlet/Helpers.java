@@ -1,16 +1,16 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
+import static gitlet.Main.CWD;
+import static gitlet.Main.GITLET_DIR;
 import static gitlet.Utils.*;
 
 public class Helpers {
@@ -18,6 +18,8 @@ public class Helpers {
      * SHA-1 hash. Returns a FileData instance that contains both the SHA-1
      * hash and the serialized object. */
     private static final SimpleDateFormat SDF = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+    private static final File COMMIT_DIR = join(GITLET_DIR, "commits");
+    private static File BLOB_DIR = Utils.join(GITLET_DIR, "blobs");
 
     public static FileData getObjectAndId(Object object) {
         byte[] serializedObject = serialize((Serializable) object);
@@ -26,14 +28,14 @@ public class Helpers {
     }
 
     /** reads Commit object from a file named the given id and returns it */
-    public static Commit getCommit(File dir, String commitId) {
-        File file = Utils.join(dir, commitId);
+    public static Commit getCommit(String commitId) {
+        File file = Utils.join(COMMIT_DIR, commitId);
         return readObject(file, Commit.class);
     }
 
     /** reads Blob object from a file named the given id and returns it */
-    public static Blob getBlob(File dir, String blobId) {
-        File file = Utils.join(dir, blobId);
+    public static Blob getBlob(String blobId) {
+        File file = Utils.join(BLOB_DIR, blobId);
         return readObject(file, Blob.class);
     }
 
@@ -67,70 +69,49 @@ public class Helpers {
     public static void overwriteWorkingFile(
             String fileId,
             String fileName,
-            File cwd,
             File blobDir) {
-        Blob fileObject = Helpers.getBlob(blobDir, fileId);
+        Blob fileObject = Helpers.getBlob(fileId);
         byte[] fileContents = fileObject.getFileContents();
-        File originalFile = Utils.join(cwd, fileName);
+        File originalFile = Utils.join(CWD, fileName);
         Utils.writeContents(originalFile, fileContents);
     }
 
-    public static HashMap<String, byte[]> getFilesFromCommit(Commit commit, File blobDir) {
+    public static HashMap<String, byte[]> getFilesFromCommit(Commit commit) {
         HashMap<String, String> blobs = commit.getBlobs();
         Set<String> blobKeys = blobs.keySet();
-
         HashMap<String, byte[]> fileContents = new HashMap<>();
+
         for (String fileName: blobKeys) {
             String id = blobs.get(fileName);
-            Blob blob = Helpers.getBlob(blobDir, id);
+            Blob blob = Helpers.getBlob(id);
             fileContents.put(fileName, blob.getFileContents());
         }
 
         return fileContents;
     }
 
-    public static HashMap<String, byte[]> setUpFileList(
+    public static HashSet<String> setUpFileSet(
             HashMap<String, byte[]> activeHeadFiles,
             HashMap<String, byte[]> branchHeadFiles,
             HashMap<String, byte[]> splitPointFiles,
-            HashMap<String, byte[]> splitPointFiles2,
-            List<String> workingFiles) {
+            HashMap<String, byte[]> splitPointFiles2) {
 
-        HashMap<String, byte[]> fileList = new HashMap<>();
+        List<String> workingFiles = plainFilenamesIn(CWD);
+        HashSet<String> fileSet = new HashSet<>();
 
-        for (String fileName: activeHeadFiles.keySet()) {
-            if (!fileList.containsKey(fileName)) {
-                fileList.put(fileName, null);
-            }
-        }
+        fileSet.addAll(activeHeadFiles.keySet());
+        fileSet.addAll(branchHeadFiles.keySet());
+        fileSet.addAll(splitPointFiles.keySet());
 
-        for (String fileName: branchHeadFiles.keySet()) {
-            if (!fileList.containsKey(fileName)) {
-                fileList.put(fileName, null);
-            }
-        }
-
-        for (String fileName: splitPointFiles.keySet()) {
-            if (!fileList.containsKey(fileName)) {
-                fileList.put(fileName, null);
-            }
-        }
-
-        for (String fileName: workingFiles) {
-            if (!fileList.containsKey(fileName)) {
-                fileList.put(fileName, null);
-            }
+        if (workingFiles != null) {
+            fileSet.addAll(workingFiles);
         }
 
         if (splitPointFiles2 != null) {
-            for (String fileName: splitPointFiles2.keySet()) {
-                if (!fileList.containsKey(fileName)) {
-                    fileList.put(fileName, null);
-                }
-            }
+            fileSet.addAll(splitPointFiles2.keySet());
         }
 
-        return fileList;
+        return fileSet;
     }
 
     public static void overwriteConflictedFile(
@@ -168,17 +149,261 @@ public class Helpers {
     }
 
     public static boolean isShortenedId(String shortenedId, String fullId) {
-        return fullId.substring(0, shortenedId.length()).equals(shortenedId);
+        return fullId.startsWith(shortenedId);
     }
 
-    public static String getFullCommitId(File dir, String shortenedId) {
-        List<String> commitIdList = plainFilenamesIn(dir);
+    public static String getFullCommitId(String shortenedId) {
+        List<String> commitIdList = plainFilenamesIn(COMMIT_DIR);
+
+        assert commitIdList != null;
         for (String fullId: commitIdList) {
             if (Helpers.isShortenedId(shortenedId, fullId)) {
                 return fullId;
             }
         }
+
         return null;
+    }
+
+    public static boolean isStringNotNull(String string) {
+        return string != null;
+    }
+
+    public static HashSet<String> getCommitHistoryIds(
+            String headCommitId,
+            HashMap<String, CommitData> commitHistory,
+            boolean forSecondParent) {
+
+        HashSet<String> commitHistoryIds = new HashSet<>();
+        String currCommitId = headCommitId;
+
+        if (!forSecondParent) {
+            while (currCommitId != null) {
+                commitHistoryIds.add(currCommitId);
+                CommitData currCommitData = commitHistory.get(currCommitId);
+                currCommitId = currCommitData.getCommitParentId();
+            }
+        } else {
+            while (currCommitId != null) {
+                commitHistoryIds.add(currCommitId);
+                CommitData currCommitData = commitHistory.get(currCommitId);
+                currCommitId = currCommitData.getCommitParentId2();
+            }
+        }
+        return commitHistoryIds;
+    }
+
+    public static String findSplitPoint(String branchHeadId,
+                                        HashSet<String> commitHistoryIds,
+                                        HashMap<String, CommitData> commitHistory) {
+        String currBranchCommitId = branchHeadId;
+
+        while (currBranchCommitId != null) {
+            if (commitHistoryIds.contains(currBranchCommitId)) {
+                return currBranchCommitId;
+            } else {
+                CommitData currBranchCommitData = commitHistory.get(currBranchCommitId);
+                currBranchCommitId = currBranchCommitData.getCommitParentId();
+            }
+        }
+        return "";
+    }
+
+    public static String getSplitPoint(String headCommitId,
+                                       String branchHeadId,
+                                       HashMap<String, CommitData> commitHistory,
+                                       Boolean forSecondParent) {
+        HashSet<String> activeHistory = Helpers.getCommitHistoryIds(headCommitId, commitHistory, forSecondParent);
+        return Helpers.findSplitPoint(branchHeadId, activeHistory, commitHistory);
+    }
+
+    public static void findUntrackedFiles() {
+        List<String> workingFiles = plainFilenamesIn(CWD);
+
+        if (workingFiles != null) {
+            for (String fileName : workingFiles) {
+                Blob blob = Helpers.fileToBlob(CWD, fileName);
+                FileData blobData = Helpers.getObjectAndId(blob);
+                if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
+                    Messages.untrackedFiles();
+                    return;
+                }
+            }
+        }
+    }
+
+    public static void deleteFilesNotInCommit(Set<String> blobKeys) {
+        List<String> workingFiles = plainFilenamesIn(CWD);
+
+        if (workingFiles != null) {
+            for (String file: workingFiles) {
+                if (!blobKeys.contains(file)) {
+                    File toDelete = Utils.join(CWD, file);
+                    restrictedDelete(toDelete);
+                }
+            }
+        }
+    }
+    public static void deleteFilesNotInBranch(Set<String> currBlobKeys,
+                                              Set<String> branchHeadBlobKeys) {
+        for (String fileName: currBlobKeys) {
+            if (!branchHeadBlobKeys.contains(fileName)) {
+                Utils.restrictedDelete(Utils.join(CWD, fileName));
+            }
+        }
+    }
+
+    public static void verifyCheckoutArgs(String[] args) {
+        try {
+            if (args.length == 3) {
+                if (!Objects.equals(args[1], "--")) {
+                    throw Utils.error("Incorrect operands.");
+                }
+            }
+
+            if (args.length == 4) {
+                if (!Objects.equals(args[2], "--")) {
+                    throw Utils.error("Incorrect operands.");
+                }
+            }
+        } catch (GitletException e) {
+            Utils.message(e.getMessage());
+        }
+    }
+
+    public static Set<String> getBlobKeys(String commitId) {
+        Commit commit = Helpers.getCommit(commitId);
+        HashMap<String, String> blobs = commit.getBlobs();
+        return blobs.keySet();
+    }
+
+    public static boolean checkMergeErrorCases(HashMap<String, String> stagingArea,
+                                            ArrayList<String> removalArea,
+                                            HashMap<String, String> branches,
+                                            String branchName,
+                                            String activeBranch) {
+
+        if (!stagingArea.isEmpty() || !removalArea.isEmpty()) {
+            Utils.message("You have uncommitted changes.");
+            return false;
+        } else if (!branches.containsKey(branchName)) {
+            Utils.message("A branch with that name does not exist.");
+            return false;
+        } else if (Objects.equals(branchName, activeBranch)) {
+            Utils.message("Cannot merge a branch with itself.");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean checkMergeSpecialCases(String splitPointId,
+                                              String splitPointId2,
+                                              String branchHeadId,
+                                              String headCommitId,
+                                              String branchName,
+                                              Repository repo) throws IOException {
+
+        if (Objects.equals(splitPointId, branchHeadId)
+                || Objects.equals(splitPointId2, branchHeadId)) {
+            Utils.message("Given branch is an ancestor of the current branch.");
+            return false;
+        }
+
+        if (Objects.equals(splitPointId, headCommitId)
+                || Objects.equals(splitPointId2, headCommitId)) {
+            repo.checkoutCommand(new String[]{"checkout", branchName});
+            Utils.message("Current branch fast-forwarded.");
+            return false;
+        }
+
+        return true;
+    }
+
+    public static boolean compareFilesForMerge(
+            byte[] activeHeadFileContent,
+            byte[] branchHeadFileContent,
+            byte[] splitPointFileContent,
+            byte[] splitPointFileContent2,
+            String fileName,
+            String branchHeadId,
+            boolean hasSecondParent,
+            Repository repo) throws IOException {
+        File newFile = Utils.join(CWD, fileName);
+
+        if (branchHeadFileContent != null) {
+            if (Arrays.equals(splitPointFileContent, activeHeadFileContent)
+                    && !Arrays.equals(splitPointFileContent, branchHeadFileContent)) {
+                repo.checkoutCommand(new String[]{"checkout", branchHeadId, "--", fileName});
+                repo.addCommand(fileName);
+            }
+            if (hasSecondParent) {
+                if (Arrays.equals(splitPointFileContent2, activeHeadFileContent)
+                        && !Arrays.equals(splitPointFileContent2, branchHeadFileContent)) {
+                    String[] args = new String[]{"checkout", branchHeadId, "--", fileName};
+                    repo.checkoutCommand(args);
+                    repo.addCommand(fileName);
+                }
+            }
+
+            if (activeHeadFileContent != null) {
+                if (!Arrays.equals(splitPointFileContent, branchHeadFileContent)
+                        && !Arrays.equals(splitPointFileContent, activeHeadFileContent)) {
+                    if (activeHeadFileContent != branchHeadFileContent) {
+                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
+                        repo.addCommand(fileName);
+                        return true;
+                    }
+                }
+                if (hasSecondParent) {
+                    if (!Arrays.equals(splitPointFileContent2, branchHeadFileContent)
+                            && !Arrays.equals(splitPointFileContent2, activeHeadFileContent)) {
+                        if (activeHeadFileContent != branchHeadFileContent) {
+                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
+                            repo.addCommand(fileName);
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            if (splitPointFileContent == null && activeHeadFileContent == null) {
+                repo.checkoutCommand(new String[]{"checkout", branchHeadId, "--", fileName});
+                repo.addCommand(fileName);
+            }
+            if (hasSecondParent) {
+                if (splitPointFileContent2 == null && activeHeadFileContent == null) {
+                    repo.checkoutCommand(new String[]{"checkout", branchHeadId, "--", fileName});
+                    repo.addCommand(fileName);
+                }
+            }
+        } else {
+            if (activeHeadFileContent != null && splitPointFileContent != null) {
+                if (!Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
+                    Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
+                    repo.addCommand(fileName);
+                    return true;
+                }
+
+                if (Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
+                    repo.rmCommand(fileName);
+                }
+            }
+            if (hasSecondParent) {
+                if (activeHeadFileContent != null && splitPointFileContent2 != null) {
+                    if (!Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
+                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, null);
+                        repo.addCommand(fileName);
+                        return true;
+                    }
+
+                    if (Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
+                        repo.rmCommand(fileName);
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
 
