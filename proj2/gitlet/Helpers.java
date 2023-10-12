@@ -435,5 +435,64 @@ public class Helpers {
         File remoteRepoFile = join(remoteGitletDir, "repository");
         return readObject(remoteRepoFile, Repository.class);
     }
+
+    public static ArrayList<String> commitsToPush(HashMap<String, CommitData> commitHistory,
+                                                  String remoteHeadId,
+                                                  String headCommit) {
+        ArrayList<String> commits = new ArrayList<>();
+        String currId = headCommit;
+        while (!Objects.equals(currId, remoteHeadId)) {
+            commits.add(0, currId);
+            CommitData commitData = commitHistory.get(currId);
+            currId = commitData.getCommitParentId2();
+        }
+        commits.add(0, remoteHeadId);
+        return commits;
+    }
+
+    public static void addCommitsToRemote(
+            HashMap<String, CommitData> commitHistory,
+            String remoteHeadId,
+            String headCommit,
+            Repository remoteRepo,
+            HashMap<String, CommitData> remoteHistory,
+            File remoteGitletDir) {
+        File remoteCommitDir = Utils.join(remoteGitletDir, "commits");
+        File remoteBlobDir = Utils.join(remoteGitletDir, "blobs");
+        ArrayList<String> commits = Helpers.commitsToPush(commitHistory, remoteHeadId, headCommit);
+
+        for (String commitId: commits) {
+            remoteHistory.put(commitId, commitHistory.get(commitId));
+            Helpers.copyCommitToRemote(commitId, remoteCommitDir);
+            Helpers.copyFilesToRemote(commitId, remoteBlobDir);
+        }
+    }
+
+    public static void copyCommitToRemote(String commitId, File remoteCommitDir) {
+        File commitFile = Utils.join(COMMIT_DIR, commitId);
+        byte[] commitFileContents = Utils.readContents(commitFile);
+        File newFile = Utils.join(remoteCommitDir, commitId);
+        Utils.writeContents(newFile, new String(commitFileContents, StandardCharsets.UTF_8));
+    }
+
+    public static void copyFilesToRemote(String commitId, File remoteBlobDir) {
+        Commit commit = Helpers.getCommit(commitId);
+        HashMap<String, String> blobs = commit.getBlobs();
+
+        for (String id: blobs.values()) {
+            File file = Utils.join(BLOB_DIR, id);
+            byte[] fileContents = Utils.readContents(file);
+            File newFile = Utils.join(remoteBlobDir, id);
+            Utils.writeContents(newFile, new String(fileContents, StandardCharsets.UTF_8));
+        }
+    }
 }
+
+
+
+
+
+
+
+
 

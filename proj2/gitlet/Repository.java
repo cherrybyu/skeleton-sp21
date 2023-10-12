@@ -466,16 +466,30 @@ public class Repository implements Serializable {
 
     public void pushCommand(String remoteName, String remoteBranchName) {
         File remoteGitletDir = Helpers.getRemoteGitletDir(remotes.get(remoteName));
+        File remoteRepoFile = join(remoteGitletDir, "repository");
+        Repository remoteRepo = null;
         if (remoteGitletDir.exists()) {
-            Repository remoteRepo = Helpers.getRemoteRepo(remoteGitletDir);
+            remoteRepo = readObject(remoteRepoFile, Repository.class);
             String remoteBranchHead = remoteRepo.branches.get(remoteBranchName);
+            HashMap<String, CommitData> remoteHistory = remoteRepo.commitHistory;
             if (commitHistory.containsKey(remoteBranchHead)) {
+                Helpers.addCommitsToRemote(
+                        commitHistory,
+                        remoteBranchHead,
+                        headCommit,
+                        remoteRepo,
+                        remoteHistory,
+                        remoteGitletDir);
 
             } else {
                 message("Please pull down remote changes before pushing.");
             }
         } else {
             message("Remote directory not found.");
+        }
+
+        if (remoteRepo != null) {
+            Utils.writeObject(remoteRepoFile, remoteRepo);
         }
     }
 
