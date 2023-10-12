@@ -30,6 +30,8 @@ public class Main {
             String message;
             String branchName;
             String commitId;
+            String remoteName;
+            String remoteBranchName;
             Repository currRepo;
 
             if (!Objects.equals(firstArg, "init") && !GITLET_DIR.exists()) {
@@ -49,6 +51,7 @@ public class Main {
                     newRepo.initCommand();
                     repository.createNewFile();
                     Utils.writeObject(repository, newRepo);
+
                     break;
                 case "add":
                     // `add [filename]` command
@@ -61,6 +64,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.addCommand(fileName);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "commit":
                     // `commit [log message]` command
@@ -73,6 +77,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.commitCommand(message);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "rm":
                     // `rm [fileName]` command
@@ -85,6 +90,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.rmCommand(fileName);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "log":
                     // `log` command
@@ -96,6 +102,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.logCommand();
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "global-log":
                     // `global-log` command
@@ -107,6 +114,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.globalLogCommand();
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "find":
                     // `find [commit message]` command
@@ -119,6 +127,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.findCommand(message);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "status":
                     // `status` command
@@ -140,6 +149,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.checkoutCommand(args);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "branch":
                     // `branch [branchName]` command
@@ -152,6 +162,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.branchCommand(branchName);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "rm-branch":
                     // `rm-branch [branchName]` command
@@ -164,6 +175,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.rmBranchCommand(branchName);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "reset":
                     // TODO: handle the `reset [commitId]` command
@@ -176,6 +188,7 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.resetCommand(commitId);
                     Utils.writeObject(repository, currRepo);
+
                     break;
                 case "merge":
                     // TODO: handle the `merge [branchName]` command
@@ -188,6 +201,69 @@ public class Main {
                     currRepo = Utils.readObject(repository, Repository.class);
                     currRepo.mergeCommand(branchName);
                     Utils.writeObject(repository, currRepo);
+                    break;
+                case "add-remote":
+                    if (args.length > 3) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+                    remoteName = args[1];
+                    String remoteLocation = args[2];
+
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.addRemoteCommand(remoteName, remoteLocation);
+                    Utils.writeObject(repository, currRepo);
+
+                    break;
+                case "rm-remote":
+                    if (args.length > 2) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+                    remoteName = args[1];
+
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.rmRemoteCommand(remoteName);
+                    Utils.writeObject(repository, currRepo);
+
+                    break;
+                case "push":
+                    if (args.length > 3) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+                    remoteName = args[1];
+                    remoteBranchName = args[2];
+
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.pushCommand(remoteName, remoteBranchName);
+                    Utils.writeObject(repository, currRepo);
+
+                    break;
+                case "fetch":
+                    if (args.length > 3) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+                    remoteName = args[1];
+                    remoteBranchName = args[2];
+
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.fetchCommand(remoteName, remoteBranchName);
+                    Utils.writeObject(repository, currRepo);
+                    break;
+                case "pull":
+                    if (args.length > 3) {
+                        Utils.message("Incorrect operands.");
+                        break;
+                    }
+                    remoteName = args[1];
+                    remoteBranchName = args[2];
+
+                    currRepo = Utils.readObject(repository, Repository.class);
+                    currRepo.pullCommand(remoteName, remoteBranchName);
+                    Utils.writeObject(repository, currRepo);
+
                     break;
                 case "":
                     Utils.message("Please enter a command.");

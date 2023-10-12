@@ -7,7 +7,10 @@ class CommitData implements Serializable {
     private final String commitTimestamp;
     private final String commitMessage;
 
-    CommitData(String commitParentId, String commitParentId2, String commitTimestamp, String commitMessage) {
+    CommitData(String commitParentId,
+               String commitParentId2,
+               String commitTimestamp,
+               String commitMessage) {
         this.commitParentId = commitParentId;
         this.commitParentId2 = commitParentId2;
         this.commitTimestamp = commitTimestamp;

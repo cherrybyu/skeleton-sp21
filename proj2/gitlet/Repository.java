@@ -38,6 +38,7 @@ public class Repository implements Serializable {
     private final ArrayList<String> removalArea = new ArrayList<>();
     private String headCommit;
     private final SimpleDateFormat SDF = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+    private HashMap<String, String> remotes = new HashMap<>();
 
     /**
      * Creates a new Gitlet version-control system in the current directory.
@@ -364,7 +365,12 @@ public class Repository implements Serializable {
 
     public void mergeCommand(String branchName) throws IOException {
         Helpers.findUntrackedFiles();
-        if (!Helpers.checkMergeErrorCases(stagingArea, removalArea, branches, branchName, activeBranch)) {
+        if (!Helpers.checkMergeErrorCases(
+                stagingArea,
+                removalArea,
+                branches,
+                branchName,
+                activeBranch)) {
             return;
         }
 
@@ -378,7 +384,13 @@ public class Repository implements Serializable {
             splitPointId2 = Helpers.getSplitPoint(headCommit, branchHeadId, commitHistory, true);
         }
 
-        if (!Helpers.checkMergeSpecialCases(splitPointId, splitPointId2, branchHeadId, headCommit, branchName, this)) {
+        if (!Helpers.checkMergeSpecialCases(
+                splitPointId,
+                splitPointId2,
+                branchHeadId,
+                headCommit,
+                branchName,
+                this)) {
             return;
         }
 
@@ -404,7 +416,11 @@ public class Repository implements Serializable {
 
         boolean mergeConflictEncountered = false;
         HashSet<String> fileSet =
-                Helpers.setUpFileSet(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2);
+                Helpers.setUpFileSet(
+                        activeHeadFiles,
+                        branchHeadFiles,
+                        splitPointFiles,
+                        splitPointFiles2);
 
         for (String fileName: fileSet) {
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
@@ -430,6 +446,45 @@ public class Repository implements Serializable {
         if (mergeConflictEncountered) {
             Utils.message("Encountered a merge conflict.");
         }
+    }
+
+    public void addRemoteCommand(String remoteName, String remoteLocation) {
+        if (remotes.containsKey(remoteName)) {
+            message("A remote with that name already exists.");
+        }
+        remoteLocation = Helpers.convertSlashes(remoteLocation);
+        remotes.put(remoteName, remoteLocation);
+    }
+
+    public void rmRemoteCommand(String remoteName) {
+        if (!remotes.containsKey(remoteName)) {
+            Utils.message("A remote with that name does not exist.");
+        } else {
+            remotes.remove(remoteName);
+        }
+    }
+
+    public void pushCommand(String remoteName, String remoteBranchName) {
+        File remoteGitletDir = Helpers.getRemoteGitletDir(remotes.get(remoteName));
+        if (remoteGitletDir.exists()) {
+            Repository remoteRepo = Helpers.getRemoteRepo(remoteGitletDir);
+            String remoteBranchHead = remoteRepo.branches.get(remoteBranchName);
+            if (commitHistory.containsKey(remoteBranchHead)) {
+
+            } else {
+                message("Please pull down remote changes before pushing.");
+            }
+        } else {
+            message("Remote directory not found.");
+        }
+    }
+
+    public void fetchCommand(String remoteName, String remoteBranchName) {
+
+    }
+
+    public void pullCommand(String remoteName, String remoteBranchName) {
+
     }
 
     private void mergeCommit(String message, String parentId2) {

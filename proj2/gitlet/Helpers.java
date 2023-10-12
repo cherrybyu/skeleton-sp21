@@ -213,7 +213,10 @@ public class Helpers {
                                        String branchHeadId,
                                        HashMap<String, CommitData> commitHistory,
                                        Boolean forSecondParent) {
-        HashSet<String> activeHistory = Helpers.getCommitHistoryIds(headCommitId, commitHistory, forSecondParent);
+        HashSet<String> activeHistory = Helpers.getCommitHistoryIds(
+                headCommitId,
+                commitHistory,
+                forSecondParent);
         return Helpers.findSplitPoint(branchHeadId, activeHistory, commitHistory);
     }
 
@@ -350,7 +353,10 @@ public class Helpers {
                 if (!Arrays.equals(splitPointFileContent, branchHeadFileContent)
                         && !Arrays.equals(splitPointFileContent, activeHeadFileContent)) {
                     if (activeHeadFileContent != branchHeadFileContent) {
-                        Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
+                        Helpers.overwriteConflictedFile(
+                                newFile,
+                                activeHeadFileContent,
+                                branchHeadFileContent);
                         repo.addCommand(fileName);
                         return true;
                     }
@@ -359,7 +365,10 @@ public class Helpers {
                     if (!Arrays.equals(splitPointFileContent2, branchHeadFileContent)
                             && !Arrays.equals(splitPointFileContent2, activeHeadFileContent)) {
                         if (activeHeadFileContent != branchHeadFileContent) {
-                            Helpers.overwriteConflictedFile(newFile, activeHeadFileContent, branchHeadFileContent); //TODO SHORTEN
+                            Helpers.overwriteConflictedFile(
+                                    newFile,
+                                    activeHeadFileContent,
+                                    branchHeadFileContent);
                             repo.addCommand(fileName);
                             return true;
                         }
@@ -404,6 +413,27 @@ public class Helpers {
             }
         }
         return false;
+    }
+
+    public static String convertSlashes(String remoteLocation) {
+        String[] arrOfStr = remoteLocation.split("");
+        String result = "";
+        for (int i = 0; i < arrOfStr.length; i++ ) {
+            if (Objects.equals(arrOfStr[i], "/")) {
+                arrOfStr[i] = java.io.File.separator;
+            }
+            result += arrOfStr[i];
+        }
+        return result;
+    }
+
+    public static File getRemoteGitletDir(String remoteLocation) {
+        return new File(remoteLocation);
+    }
+
+    public static Repository getRemoteRepo(File remoteGitletDir) {
+        File remoteRepoFile = join(remoteGitletDir, "repository");
+        return readObject(remoteRepoFile, Repository.class);
     }
 }
 

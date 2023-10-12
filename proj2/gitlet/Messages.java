@@ -9,7 +9,8 @@ public class Messages {
     }
     public static void untrackedFiles() {
         Utils.message(
-                "There is an untracked file in the way; delete it, or add and commit it first."); //TODO SHORTEN
+                "There is an untracked file in the way;" +
+                        " delete it, or add and commit it first.");
 
     }
 
