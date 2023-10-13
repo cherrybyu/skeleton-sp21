@@ -506,6 +506,7 @@ public class Repository implements Serializable {
         Repository remoteRepo;
 
         if (remoteGitletDir.exists()) {
+//            message("exist");
             remoteRepo = readObject(remoteRepoFile, Repository.class);
             HashMap<String, String> remoteBranches = remoteRepo.branches;
 

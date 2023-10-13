@@ -265,7 +265,7 @@ public class Helpers {
         if (workingFiles != null) {
             for (String fileName : workingFiles) {
 //            File file = Utils.join(BLOB_DIR, currBlobs.get(fileName));
-                Blob blob = Helpers.getBlob(fileName);
+                Blob blob = Helpers.getBlob(currBlobs.get(fileName));
                 if (currBlobs.containsKey(fileName)) {
                     Blob newBlob = Helpers.fileToBlob(CWD, fileName);
                     FileData newBlobData = Helpers.getObjectAndId(newBlob);
