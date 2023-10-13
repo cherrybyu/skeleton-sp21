@@ -455,7 +455,7 @@ public class Helpers {
         while (!Objects.equals(currId, toHeadId)) {
             commits.add(0, currId);
             CommitData commitData = commitHistory.get(currId);
-            currId = commitData.getCommitParentId2();
+            currId = commitData.getCommitParentId();
         }
 
         return commits;
