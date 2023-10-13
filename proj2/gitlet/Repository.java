@@ -464,41 +464,82 @@ public class Repository implements Serializable {
         }
     }
 
-    public void pushCommand(String remoteName, String remoteBranchName) {
+    public void pushCommand(String remoteName, String remoteBranchName) throws IOException {
         File remoteGitletDir = Helpers.getRemoteGitletDir(remotes.get(remoteName));
         File remoteRepoFile = join(remoteGitletDir, "repository");
-        Repository remoteRepo = null;
+        Repository remoteRepo;
+
         if (remoteGitletDir.exists()) {
             remoteRepo = readObject(remoteRepoFile, Repository.class);
-            String remoteBranchHead = remoteRepo.branches.get(remoteBranchName);
-            HashMap<String, CommitData> remoteHistory = remoteRepo.commitHistory;
+            String remoteBranchHead = Helpers.getRemoteBranchHead(
+                    remoteRepo.branches,
+                    remoteRepo.headCommit,
+                    remoteBranchName);
+
             if (commitHistory.containsKey(remoteBranchHead)) {
+                remoteRepo.checkoutCommand(new String[]{"checkout", remoteBranchName});
                 Helpers.addCommitsToRemote(
                         commitHistory,
                         remoteBranchHead,
                         headCommit,
                         remoteRepo,
-                        remoteHistory,
+                        remoteRepo.commitHistory,
                         remoteGitletDir);
-
+                remoteRepo.resetCommand(headCommit);
             } else {
                 message("Please pull down remote changes before pushing.");
+                return;
             }
         } else {
             message("Remote directory not found.");
+            return;
         }
 
-        if (remoteRepo != null) {
-            Utils.writeObject(remoteRepoFile, remoteRepo);
+        Utils.writeObject(remoteRepoFile, remoteRepo);
+    }
+
+    public void fetchCommand(String remoteName, String remoteBranchName) throws IOException {
+        File remoteGitletDir = Helpers.getRemoteGitletDir(remotes.get(remoteName));
+        File remoteRepoFile = join(remoteGitletDir, "repository");
+        Repository remoteRepo;
+
+        if (remoteGitletDir.exists()) {
+            remoteRepo = readObject(remoteRepoFile, Repository.class);
+            HashMap<String, String> remoteBranches = remoteRepo.branches;
+
+            if (remoteBranches.containsKey(remoteBranchName)) {
+                String localBranchName = remoteName + " / " + remoteBranchName;
+                if (!branches.containsKey(localBranchName)) {
+                    branches.put(localBranchName, headCommit);
+                }
+                this.checkoutCommand(new String[]{"checkout", localBranchName});
+                remoteRepo.checkoutCommand(new String[]{"checkout", remoteBranchName});
+                String remoteBranchHead = remoteBranches.get(remoteBranchName);
+                Helpers.copyRemoteBranch(
+                        commitHistory,
+                        remoteRepo.commitHistory,
+                        headCommit,
+                        remoteBranchHead,
+                        remoteGitletDir
+                );
+
+                branches.replace(localBranchName, remoteBranchHead);
+            } else {
+                message("That remote does not have that branch.");
+                return;
+            }
+        } else {
+            message("Remote directory not found.");
+            return;
         }
+
+        Utils.writeObject(remoteRepoFile, remoteRepo);
     }
 
-    public void fetchCommand(String remoteName, String remoteBranchName) {
-
-    }
-
-    public void pullCommand(String remoteName, String remoteBranchName) {
-
+    public void pullCommand(String remoteName, String remoteBranchName) throws IOException {
+        String localBranchName = remoteName + " / " + remoteBranchName;
+        this.fetchCommand(remoteName, remoteBranchName);
+        this.mergeCommand(localBranchName);
     }
 
     private void mergeCommit(String message, String parentId2) {

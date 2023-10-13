@@ -52,4 +52,8 @@ public class Commit implements Serializable {
     public HashMap<String, String> getBlobs() {
         return blobs;
     }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
 }
