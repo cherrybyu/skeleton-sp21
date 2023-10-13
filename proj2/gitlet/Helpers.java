@@ -447,14 +447,29 @@ public class Helpers {
         return remoteBranchHead;
     }
 
-    public static ArrayList<String> fetchCommits(HashMap<String, CommitData> commitHistory,
+    public static ArrayList<String> getCommitsForPush(HashMap<String, CommitData> commitHistory,
                                                  String toHeadId,
                                                  String fromHeadId) {
         ArrayList<String> commits = new ArrayList<>();
         String currId = fromHeadId;
-        while (!Objects.equals(currId, toHeadId)) {
+        while (currId != null) {
             commits.add(0, currId);
             CommitData commitData = commitHistory.get(currId);
+            currId = commitData.getCommitParentId();
+        }
+
+        return commits;
+    }
+
+    public static ArrayList<String> fetchCommits(HashMap<String, CommitData> toCommitHistory,
+                                                 HashMap<String, CommitData> fromCommitHistory,
+                                                      String fromHeadId) {
+        ArrayList<String> commits = new ArrayList<>();
+        String currId = fromHeadId;
+
+        while (currId != null && !toCommitHistory.containsKey(currId)) {
+            commits.add(0, currId);
+            CommitData commitData = fromCommitHistory.get(currId);
             currId = commitData.getCommitParentId();
         }
 
@@ -466,21 +481,21 @@ public class Helpers {
                                         String toHeadId,
                                         String fromHeadId,
                                         File remoteGitletDir) {
-        ArrayList<String> commits = Helpers.fetchCommits(remoteHistory, toHeadId, fromHeadId);
+        ArrayList<String> commits = Helpers.fetchCommits(commitHistory, remoteHistory, fromHeadId);
         File remoteCommitDir = Utils.join(remoteGitletDir, "commits");
         File remoteBlobDir = Utils.join(remoteGitletDir, "blobs");
 
         for (String commitId: commits) {
             commitHistory.put(commitId, remoteHistory.get(commitId));
             Helpers.copyCommitToDir(commitId, remoteCommitDir, COMMIT_DIR);
-            Helpers.copyFilesToDir(commitId, remoteBlobDir, BLOB_DIR);
+            Helpers.copyFilesToDir(commitId, remoteCommitDir, remoteBlobDir, BLOB_DIR);
         }
     }
 
     public static ArrayList<String> commitsToPush(HashMap<String, CommitData> commitHistory,
                                                   String toHeadId,
                                                   String fromHeadId) {
-        ArrayList<String> commits = Helpers.fetchCommits(commitHistory, toHeadId, fromHeadId);
+        ArrayList<String> commits = Helpers.getCommitsForPush(commitHistory, toHeadId, fromHeadId);
         commits.add(0, toHeadId);
         return commits;
     }
@@ -499,7 +514,7 @@ public class Helpers {
         for (String commitId: commits) {
             remoteHistory.put(commitId, commitHistory.get(commitId));
             Helpers.copyCommitToDir(commitId, COMMIT_DIR, remoteCommitDir);
-            Helpers.copyFilesToDir(commitId, BLOB_DIR, remoteBlobDir);
+            Helpers.copyFilesToDir(commitId, COMMIT_DIR, BLOB_DIR, remoteBlobDir);
         }
     }
 
@@ -507,18 +522,21 @@ public class Helpers {
         File commitFile = Utils.join(fromDir, commitId);
         byte[] commitFileContents = Utils.readContents(commitFile);
         File newFile = Utils.join(toDir, commitId);
-        Utils.writeContents(newFile, new String(commitFileContents, StandardCharsets.UTF_8));
+        Utils.writeContents(newFile, commitFileContents);
     }
 
-    public static void copyFilesToDir(String commitId, File fromDir, File toDir) {
-        Commit commit = Helpers.getCommit(commitId);
+    public static void copyFilesToDir(String commitId, File commitDir, File fromDir, File toDir) {
+//        Commit commit = Helpers.getCommit(commitId);
+        File cfile = Utils.join(commitDir, commitId);
+
+        Commit commit = readObject(cfile, Commit.class);
         HashMap<String, String> blobs = commit.getBlobs();
 
         for (String id: blobs.values()) {
             File file = Utils.join(fromDir, id);
             byte[] fileContents = Utils.readContents(file);
             File newFile = Utils.join(toDir, id);
-            Utils.writeContents(newFile, new String(fileContents, StandardCharsets.UTF_8));
+            Utils.writeContents(newFile, fileContents);
         }
     }
 }

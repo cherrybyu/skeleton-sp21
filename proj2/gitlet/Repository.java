@@ -477,7 +477,6 @@ public class Repository implements Serializable {
                     remoteBranchName);
 
             if (commitHistory.containsKey(remoteBranchHead)) {
-                remoteRepo.checkoutCommand(new String[]{"checkout", remoteBranchName});
                 Helpers.addCommitsToRemote(
                         commitHistory,
                         remoteBranchHead,
@@ -508,12 +507,10 @@ public class Repository implements Serializable {
             HashMap<String, String> remoteBranches = remoteRepo.branches;
 
             if (remoteBranches.containsKey(remoteBranchName)) {
-                String localBranchName = remoteName + " / " + remoteBranchName;
+                String localBranchName = remoteName + "/" + remoteBranchName;
                 if (!branches.containsKey(localBranchName)) {
                     branches.put(localBranchName, headCommit);
                 }
-                this.checkoutCommand(new String[]{"checkout", localBranchName});
-                remoteRepo.checkoutCommand(new String[]{"checkout", remoteBranchName});
                 String remoteBranchHead = remoteBranches.get(remoteBranchName);
                 Helpers.copyRemoteBranch(
                         commitHistory,
@@ -522,8 +519,8 @@ public class Repository implements Serializable {
                         remoteBranchHead,
                         remoteGitletDir
                 );
-
                 branches.replace(localBranchName, remoteBranchHead);
+
             } else {
                 message("That remote does not have that branch.");
                 return;
@@ -537,7 +534,7 @@ public class Repository implements Serializable {
     }
 
     public void pullCommand(String remoteName, String remoteBranchName) throws IOException {
-        String localBranchName = remoteName + " / " + remoteBranchName;
+        String localBranchName = remoteName + "/" + remoteBranchName;
         this.fetchCommand(remoteName, remoteBranchName);
         this.mergeCommand(localBranchName);
     }
