@@ -237,16 +237,29 @@ public class Helpers {
         }
     }
 
-    public static ArrayList<String> listUntrackedFiles() {
+    public static ArrayList<String> listUntrackedFiles(List<String> modifiedFiles) {
         List<String> workingFiles = plainFilenamesIn(CWD);
         ArrayList<String> untrackedFiles = new ArrayList<>();
         if (workingFiles != null) {
             for (String fileName : workingFiles) {
-                Blob blob = Helpers.fileToBlob(CWD, fileName);
-                FileData blobData = Helpers.getObjectAndId(blob);
-                if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
-                    untrackedFiles.add(fileName);
+                if (!modifiedFiles.isEmpty()) {
+                    for (String file : modifiedFiles) {
+                        if (!file.startsWith(fileName)) {
+                            Blob blob = Helpers.fileToBlob(CWD, fileName);
+                            FileData blobData = Helpers.getObjectAndId(blob);
+                            if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
+                                untrackedFiles.add(fileName);
+                            }
+                        }
+                    }
+                } else {
+                    Blob blob = Helpers.fileToBlob(CWD, fileName);
+                    FileData blobData = Helpers.getObjectAndId(blob);
+                    if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
+                        untrackedFiles.add(fileName);
+                    }
                 }
+
             }
             untrackedFiles.sort(String::compareToIgnoreCase);
         }
@@ -263,6 +276,18 @@ public class Helpers {
         ArrayList<String> modifiedFiles = new ArrayList<>();
 
         if (workingFiles != null) {
+            for (String fileName : currBlobs.keySet()) {
+                if (!removalArea.contains(fileName) && !workingFiles.contains(fileName)) {
+                    modifiedFiles.add(fileName + " (deleted)");
+                }
+            }
+
+            for (String fileName : stagingArea.keySet()) {
+                if (!workingFiles.contains(fileName)) {
+                    modifiedFiles.add(fileName + " (deleted)");
+                }
+            }
+
             for (String fileName : workingFiles) {
                 if (currBlobs.containsKey(fileName)) {
                     Blob blob = Helpers.getBlob(currBlobs.get(fileName));
@@ -284,17 +309,7 @@ public class Helpers {
                 }
             }
 
-            for (String fileName : currBlobs.keySet()) {
-                if (!removalArea.contains(fileName) && !workingFiles.contains(fileName)) {
-                    modifiedFiles.add(fileName + " (deleted)");
-                }
-            }
 
-            for (String fileName : stagingArea.keySet()) {
-                if (!workingFiles.contains(fileName)) {
-                    modifiedFiles.add(fileName + " (deleted)");
-                }
-            }
         }
 
         modifiedFiles.sort(String::compareToIgnoreCase);
