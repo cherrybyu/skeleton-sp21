@@ -1,8 +1,10 @@
 package gitlet;
 
+import javax.xml.parsers.SAXParser;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -233,6 +235,70 @@ public class Helpers {
                 }
             }
         }
+    }
+
+    public static ArrayList<String> listUntrackedFiles() {
+        List<String> workingFiles = plainFilenamesIn(CWD);
+        ArrayList<String> untrackedFiles = new ArrayList<>();
+        if (workingFiles != null) {
+            for (String fileName : workingFiles) {
+                Blob blob = Helpers.fileToBlob(CWD, fileName);
+                FileData blobData = Helpers.getObjectAndId(blob);
+                if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
+                    untrackedFiles.add(fileName);
+                }
+            }
+            untrackedFiles.sort(String::compareToIgnoreCase);
+        }
+        return untrackedFiles;
+    }
+
+    public static ArrayList<String> listModifiedFiles(
+            String headCommit,
+            HashMap<String, String> stagingArea,
+            ArrayList<String> removalArea) {
+        List<String> workingFiles = plainFilenamesIn(CWD);
+        Commit currCommit = getCommit(headCommit);
+        HashMap<String, String> currBlobs = currCommit.getBlobs();
+        ArrayList<String> modifiedFiles = new ArrayList<>();
+
+        if (workingFiles != null) {
+            for (String fileName : workingFiles) {
+//            File file = Utils.join(BLOB_DIR, currBlobs.get(fileName));
+                Blob blob = Helpers.getBlob(fileName);
+                if (currBlobs.containsKey(fileName)) {
+                    Blob newBlob = Helpers.fileToBlob(CWD, fileName);
+                    FileData newBlobData = Helpers.getObjectAndId(newBlob);
+                    if (!Arrays.equals(newBlobData.serialized, blob.getFileContents())
+                            && !stagingArea.containsKey(fileName)) {
+                        modifiedFiles.add(fileName + " (modified)");
+                    }
+
+                }
+
+                if (stagingArea.containsKey(fileName)) {
+                    Blob stagedBlob = getBlob(stagingArea.get(fileName));
+                    if (!Arrays.equals(stagedBlob.getFileContents(), blob.getFileContents())) {
+                        modifiedFiles.add(fileName + " (modified)");
+                    }
+                }
+            }
+
+            for (String fileName : currBlobs.keySet()) {
+                if (!removalArea.contains(fileName) && !workingFiles.contains(fileName)) {
+                    modifiedFiles.add(fileName + " (deleted)");
+                }
+            }
+
+            for (String fileName : stagingArea.keySet()) {
+                if (!workingFiles.contains(fileName)) {
+                    modifiedFiles.add(fileName + " (deleted)");
+                }
+            }
+        }
+
+        modifiedFiles.sort(String::compareToIgnoreCase);
+        return modifiedFiles;
     }
 
     public static void deleteFilesNotInCommit(Set<String> blobKeys) {
