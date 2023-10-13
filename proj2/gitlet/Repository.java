@@ -318,27 +318,13 @@ public class Repository implements Serializable {
             Commit branchHeadCommit = Helpers.getCommit(branchHeadId);
             HashMap<String, String> branchHeadBlobs = branchHeadCommit.getBlobs();
             Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
-//            if (Objects.equals(branchName, "master")) {
-//                message("before");
-//                message(plainFilenamesIn(CWD).toString());
-//                message(branchHeadBlobKeys.toString());
-//
-//            }
+
             Helpers.deleteFilesNotInBranch(currBlobKeys, branchHeadBlobKeys);
-//            if (Objects.equals(branchName, "master")) {
-//                message("after");
-//                message(plainFilenamesIn(CWD).toString());
-//                message(branchHeadBlobKeys.toString());
-//            }
+
             for (String fileName: branchHeadBlobKeys) {
                 String[] newArgs = new String[] {"checkout", branchHeadId, "--", fileName};
                 this.checkoutCommand(newArgs);
             }
-
-//            if (Objects.equals(branchName, "master")) {
-//                message("after after");
-//                message(plainFilenamesIn(CWD).toString());
-//            }
 
             stagingArea.clear();
             activeBranch = branchName;
