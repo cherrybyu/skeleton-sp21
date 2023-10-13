@@ -275,6 +275,7 @@ public class Helpers {
             for (String fileName : currBlobs.keySet()) {
                 if (!removalArea.contains(fileName) && !workingFiles.contains(fileName)) {
                     modifiedFiles.add(fileName + " (deleted)");
+                    modifiedFiles.add("a");
                 }
             }
 

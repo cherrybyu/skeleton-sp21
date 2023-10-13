@@ -242,20 +242,20 @@ public class Repository implements Serializable {
         System.out.println();
 
         Utils.message("=== Modifications Not Staged For Commit ===");
-        List<String> modifiedFiles = Helpers.listModifiedFiles(
-                headCommit,
-                stagingArea,
-                removalArea);
-        for (String file: modifiedFiles) {
-            Utils.message(file);
-        }
+//        List<String> modifiedFiles = Helpers.listModifiedFiles(
+//                headCommit,
+//                stagingArea,
+//                removalArea);
+//        for (String file: modifiedFiles) {
+//            Utils.message(file);
+//        }
         System.out.println();
 
         Utils.message("=== Untracked Files ===");
-        List<String> untrackedFiles = Helpers.listUntrackedFiles(modifiedFiles);
-        for (String file: untrackedFiles) {
-            Utils.message(file);
-        }
+//        List<String> untrackedFiles = Helpers.listUntrackedFiles(modifiedFiles);
+//        for (String file: untrackedFiles) {
+//            Utils.message(file);
+//        }
         System.out.println();
     }
 
