@@ -454,6 +454,7 @@ public class Repository implements Serializable {
     public void addRemoteCommand(String remoteName, String remoteLocation) {
         if (remotes.containsKey(remoteName)) {
             message("A remote with that name already exists.");
+            return;
         }
         remoteLocation = Helpers.convertSlashes(remoteLocation);
         remotes.put(remoteName, remoteLocation);
@@ -462,6 +463,8 @@ public class Repository implements Serializable {
     public void rmRemoteCommand(String remoteName) {
         if (!remotes.containsKey(remoteName)) {
             Utils.message("A remote with that name does not exist.");
+            return;
+
         } else {
             remotes.remove(remoteName);
         }
@@ -501,12 +504,11 @@ public class Repository implements Serializable {
     }
 
     public void fetchCommand(String remoteName, String remoteBranchName) throws IOException {
-        File remoteGitletDir = Helpers.getRemoteGitletDir(remotes.get(remoteName));
-        File remoteRepoFile = join(remoteGitletDir, "repository");
+        File remoteGitletDir = new File(remotes.get(remoteName));
+        File remoteRepoFile;
         Repository remoteRepo;
-
         if (remoteGitletDir.exists()) {
-//            message("exist");
+            remoteRepoFile = join(remoteGitletDir, "repository");
             remoteRepo = readObject(remoteRepoFile, Repository.class);
             HashMap<String, String> remoteBranches = remoteRepo.branches;
 
@@ -534,7 +536,9 @@ public class Repository implements Serializable {
             return;
         }
 
-        Utils.writeObject(remoteRepoFile, remoteRepo);
+        if (remoteRepo != null) {
+            Utils.writeObject(remoteRepoFile, remoteRepo);
+        }
     }
 
     public void pullCommand(String remoteName, String remoteBranchName) throws IOException {

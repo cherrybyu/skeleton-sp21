@@ -264,9 +264,8 @@ public class Helpers {
 
         if (workingFiles != null) {
             for (String fileName : workingFiles) {
-//            File file = Utils.join(BLOB_DIR, currBlobs.get(fileName));
-                Blob blob = Helpers.getBlob(currBlobs.get(fileName));
                 if (currBlobs.containsKey(fileName)) {
+                    Blob blob = Helpers.getBlob(currBlobs.get(fileName));
                     Blob newBlob = Helpers.fileToBlob(CWD, fileName);
                     FileData newBlobData = Helpers.getObjectAndId(newBlob);
                     if (!Arrays.equals(newBlobData.serialized, blob.getFileContents())
@@ -277,6 +276,7 @@ public class Helpers {
                 }
 
                 if (stagingArea.containsKey(fileName)) {
+                    Blob blob = Helpers.getBlob(currBlobs.get(fileName));
                     Blob stagedBlob = getBlob(stagingArea.get(fileName));
                     if (!Arrays.equals(stagedBlob.getFileContents(), blob.getFileContents())) {
                         modifiedFiles.add(fileName + " (modified)");
