@@ -242,20 +242,20 @@ public class Repository implements Serializable {
         System.out.println();
 
         Utils.message("=== Modifications Not Staged For Commit ===");
-//        List<String> modifiedFiles = Helpers.listModifiedFiles(
-//                headCommit,
-//                stagingArea,
-//                removalArea);
-//        for (String file: modifiedFiles) {
-//            Utils.message(file);
-//        }
+        List<String> modifiedFiles = Helpers.listModifiedFiles(
+                headCommit,
+                stagingArea,
+                removalArea);
+        for (String file: modifiedFiles) {
+            Utils.message(file);
+        }
         System.out.println();
 
         Utils.message("=== Untracked Files ===");
-//        List<String> untrackedFiles = Helpers.listUntrackedFiles(modifiedFiles);
-//        for (String file: untrackedFiles) {
-//            Utils.message(file);
-//        }
+        List<String> untrackedFiles = Helpers.listUntrackedFiles(modifiedFiles);
+        for (String file: untrackedFiles) {
+            Utils.message(file);
+        }
         System.out.println();
     }
 
@@ -306,7 +306,9 @@ public class Repository implements Serializable {
                 return;
             }
 
-            Helpers.findUntrackedFiles();
+            if (Helpers.findUntrackedFiles()) {
+                return;
+            }
 
             Commit currCommit = Helpers.getCommit(headCommit);
             HashMap<String, String> currBlobs = currCommit.getBlobs();
@@ -316,13 +318,28 @@ public class Repository implements Serializable {
             Commit branchHeadCommit = Helpers.getCommit(branchHeadId);
             HashMap<String, String> branchHeadBlobs = branchHeadCommit.getBlobs();
             Set<String> branchHeadBlobKeys = branchHeadBlobs.keySet();
-
+//            if (Objects.equals(branchName, "master")) {
+//                message("before");
+//                message(plainFilenamesIn(CWD).toString());
+//                message(branchHeadBlobKeys.toString());
+//
+//            }
             Helpers.deleteFilesNotInBranch(currBlobKeys, branchHeadBlobKeys);
-
+//            if (Objects.equals(branchName, "master")) {
+//                message("after");
+//                message(plainFilenamesIn(CWD).toString());
+//                message(branchHeadBlobKeys.toString());
+//            }
             for (String fileName: branchHeadBlobKeys) {
                 String[] newArgs = new String[] {"checkout", branchHeadId, "--", fileName};
                 this.checkoutCommand(newArgs);
             }
+
+//            if (Objects.equals(branchName, "master")) {
+//                message("after after");
+//                message(plainFilenamesIn(CWD).toString());
+//            }
+
             stagingArea.clear();
             activeBranch = branchName;
             headCommit = branchHeadId;
@@ -359,7 +376,9 @@ public class Repository implements Serializable {
         }
 
         Set<String> blobKeys = Helpers.getBlobKeys(commitId);
-        Helpers.findUntrackedFiles();
+        if (Helpers.findUntrackedFiles()) {
+            return;
+        }
         Helpers.deleteFilesNotInCommit(blobKeys);
 
         for (String fileName: blobKeys) {
@@ -373,7 +392,9 @@ public class Repository implements Serializable {
     }
 
     public void mergeCommand(String branchName) throws IOException {
-        Helpers.findUntrackedFiles();
+        if (Helpers.findUntrackedFiles()) {
+            return;
+        }
         if (!Helpers.checkMergeErrorCases(
                 stagingArea,
                 removalArea,

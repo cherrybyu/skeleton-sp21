@@ -218,7 +218,7 @@ public class Helpers {
         return Helpers.findSplitPoint(branchHeadId, activeHistory, commitHistory);
     }
 
-    public static void findUntrackedFiles() {
+    public static boolean findUntrackedFiles() {
         List<String> workingFiles = plainFilenamesIn(CWD);
 
         if (workingFiles != null) {
@@ -227,10 +227,11 @@ public class Helpers {
                 FileData blobData = Helpers.getObjectAndId(blob);
                 if (!Helpers.isFileInDir(BLOB_DIR, blobData.id)) {
                     Messages.untrackedFiles();
-                    return;
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     public static ArrayList<String> listUntrackedFiles(List<String> modifiedFiles) {
@@ -269,13 +270,16 @@ public class Helpers {
         List<String> workingFiles = plainFilenamesIn(CWD);
         Commit currCommit = getCommit(headCommit);
         HashMap<String, String> currBlobs = currCommit.getBlobs();
+
+//        if (currBlobs.containsKey("k.txt")) {
+//            message(currBlobs.keySet().toString());
+//        }
         ArrayList<String> modifiedFiles = new ArrayList<>();
 
         if (workingFiles != null) {
             for (String fileName : currBlobs.keySet()) {
                 if (!removalArea.contains(fileName) && !workingFiles.contains(fileName)) {
                     modifiedFiles.add(fileName + " (deleted)");
-                    modifiedFiles.add("a");
                 }
             }
 
@@ -327,10 +331,16 @@ public class Helpers {
     }
     public static void deleteFilesNotInBranch(Set<String> currBlobKeys,
                                               Set<String> branchHeadBlobKeys) {
+        Set<String> toRemove = new HashSet<>();
         for (String fileName: currBlobKeys) {
             if (!branchHeadBlobKeys.contains(fileName)) {
                 Utils.restrictedDelete(Utils.join(CWD, fileName));
+                toRemove.add(fileName);
             }
+        }
+
+        for (String fileName: toRemove) {
+            currBlobKeys.remove(fileName);
         }
     }
 
