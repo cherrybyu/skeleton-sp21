@@ -385,21 +385,15 @@ public class Repository implements Serializable {
 
         CommitData headCommitData = commitHistory.get(headCommit);
         boolean hasSecondParent = Helpers.isStringNotNull(headCommitData.getCommitParentId2());
-
         String branchHeadId = branches.get(branchName);
         String splitPointId = Helpers.getSplitPoint(headCommit, branchHeadId, commitHistory, false);
         String splitPointId2 = "";
         if (hasSecondParent) {
             splitPointId2 = Helpers.getSplitPoint(headCommit, branchHeadId, commitHistory, true);
         }
-
-        if (!Helpers.checkMergeSpecialCases(
-                splitPointId,
-                splitPointId2,
-                branchHeadId,
-                headCommit,
-                branchName,
-                this)) {
+        if (!Helpers.checkMergeSpecialCases(splitPointId, splitPointId2,
+                                            branchHeadId, headCommit,
+                                            branchName, this)) {
             return;
         }
 
@@ -425,7 +419,8 @@ public class Repository implements Serializable {
 
         boolean mergeConflictEncountered = false;
         HashSet<String> fileSet =
-                Helpers.setUpFileSet(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2);
+                Helpers.setUpFileSet(activeHeadFiles, branchHeadFiles,
+                                        splitPointFiles, splitPointFiles2);
         for (String fileName: fileSet) {
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
             byte[] branchHeadFileContent = branchHeadFiles.get(fileName);
