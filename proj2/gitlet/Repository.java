@@ -242,7 +242,10 @@ public class Repository implements Serializable {
         System.out.println();
 
         Utils.message("=== Modifications Not Staged For Commit ===");
-        List<String> modifiedFiles = Helpers.listModifiedFiles(headCommit, stagingArea, removalArea);
+        List<String> modifiedFiles = Helpers.listModifiedFiles(
+                headCommit,
+                stagingArea,
+                removalArea);
         for (String file: modifiedFiles) {
             Utils.message(file);
         }
@@ -422,12 +425,7 @@ public class Repository implements Serializable {
 
         boolean mergeConflictEncountered = false;
         HashSet<String> fileSet =
-                Helpers.setUpFileSet(
-                        activeHeadFiles,
-                        branchHeadFiles,
-                        splitPointFiles,
-                        splitPointFiles2);
-
+                Helpers.setUpFileSet(activeHeadFiles, branchHeadFiles, splitPointFiles, splitPointFiles2);
         for (String fileName: fileSet) {
             byte[] activeHeadFileContent = activeHeadFiles.get(fileName);
             byte[] branchHeadFileContent = branchHeadFiles.get(fileName);
@@ -448,7 +446,6 @@ public class Repository implements Serializable {
         }
 
         this.mergeCommit(Messages.mergeCommitMessage(branchName, activeBranch), branchHeadId);
-
         if (mergeConflictEncountered) {
             Utils.message("Encountered a merge conflict.");
         }

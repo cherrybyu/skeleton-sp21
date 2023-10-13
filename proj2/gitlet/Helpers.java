@@ -1,16 +1,12 @@
 package gitlet;
 
-import javax.xml.parsers.SAXParser;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
-
-
 import static gitlet.Main.CWD;
 import static gitlet.Main.GITLET_DIR;
 import static gitlet.Utils.*;
@@ -414,7 +410,6 @@ public class Helpers {
             boolean hasSecondParent,
             Repository repo) throws IOException {
         File newFile = Utils.join(CWD, fileName);
-
         if (branchHeadFileContent != null) {
             if (Arrays.equals(splitPointFileContent, activeHeadFileContent)
                     && !Arrays.equals(splitPointFileContent, branchHeadFileContent)) {
@@ -429,7 +424,6 @@ public class Helpers {
                     repo.addCommand(fileName);
                 }
             }
-
             if (activeHeadFileContent != null) {
                 if (!Arrays.equals(splitPointFileContent, branchHeadFileContent)
                         && !Arrays.equals(splitPointFileContent, activeHeadFileContent)) {
@@ -456,7 +450,6 @@ public class Helpers {
                     }
                 }
             }
-
             if (splitPointFileContent == null && activeHeadFileContent == null) {
                 repo.checkoutCommand(new String[]{"checkout", branchHeadId, "--", fileName});
                 repo.addCommand(fileName);
@@ -474,7 +467,6 @@ public class Helpers {
                     repo.addCommand(fileName);
                     return true;
                 }
-
                 if (Arrays.equals(activeHeadFileContent, splitPointFileContent)) {
                     repo.rmCommand(fileName);
                 }
@@ -486,7 +478,6 @@ public class Helpers {
                         repo.addCommand(fileName);
                         return true;
                     }
-
                     if (Arrays.equals(activeHeadFileContent, splitPointFileContent2)) {
                         repo.rmCommand(fileName);
                     }
@@ -499,7 +490,7 @@ public class Helpers {
     public static String convertSlashes(String remoteLocation) {
         String[] arrOfStr = remoteLocation.split("");
         String result = "";
-        for (int i = 0; i < arrOfStr.length; i++ ) {
+        for (int i = 0; i < arrOfStr.length; i++) {
             if (Objects.equals(arrOfStr[i], "/")) {
                 arrOfStr[i] = java.io.File.separator;
             }
