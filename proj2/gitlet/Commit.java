@@ -8,18 +8,18 @@ import java.util.HashMap;
  *  @author Hannah Nguyen
  */
 public class Commit implements Serializable {
-    /**
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
-
+    /** Parent ID */
     private String parentId;
+    /** Second parent ID from merge */
     private String parentId2;
+    /** Time of commit creation */
     private String timestamp;
+    /** Commit message */
     private String message;
+    /** Mapping of file names to their Blob ID */
     private HashMap<String, String> blobs;
 
+    /** Class constructor */
     public Commit(
             String parentId,
             String parentId2,
@@ -33,27 +33,28 @@ public class Commit implements Serializable {
         this.timestamp = timestamp;
     }
 
+    /** Gets first parent ID */
     public String getParentId() {
         return parentId;
     }
 
+    /** Gets second parent ID */
     public String getParentId2() {
         return parentId2;
     }
 
+    /** Gets timestamp */
     public String getTimestamp() {
         return timestamp;
     }
 
+    /** Gets Message */
     public String getMessage() {
         return message;
     }
-    /** returns file names mapped to their sha1 hash */
+
+    /** Gets blobs */
     public HashMap<String, String> getBlobs() {
         return blobs;
-    }
-
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
     }
 }
