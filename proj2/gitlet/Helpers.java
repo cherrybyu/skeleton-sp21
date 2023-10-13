@@ -292,8 +292,7 @@ public class Helpers {
                 if (currBlobs.containsKey(fileName)) {
                     Blob blob = Helpers.getBlob(currBlobs.get(fileName));
                     Blob newBlob = Helpers.fileToBlob(CWD, fileName);
-                    FileData newBlobData = Helpers.getObjectAndId(newBlob);
-                    if (!Arrays.equals(newBlobData.serialized, blob.getFileContents())
+                    if (!Arrays.equals(newBlob.getFileContents(), blob.getFileContents())
                             && !stagingArea.containsKey(fileName)) {
                         modifiedFiles.add(fileName + " (modified)");
                     }
@@ -301,14 +300,15 @@ public class Helpers {
                 }
 
                 if (stagingArea.containsKey(fileName)) {
-                    Blob blob = Helpers.getBlob(currBlobs.get(fileName));
-                    Blob stagedBlob = getBlob(stagingArea.get(fileName));
-                    if (!Arrays.equals(stagedBlob.getFileContents(), blob.getFileContents())) {
-                        modifiedFiles.add(fileName + " (modified)");
+                    if (currBlobs.containsKey(fileName)) {
+                        Blob blob = Helpers.getBlob(currBlobs.get(fileName));
+                        Blob stagedBlob = getBlob(stagingArea.get(fileName));
+                        if (!Arrays.equals(stagedBlob.getFileContents(), blob.getFileContents())) {
+                            modifiedFiles.add(fileName + " (modified)");
+                        }
                     }
                 }
             }
-
 
         }
 
